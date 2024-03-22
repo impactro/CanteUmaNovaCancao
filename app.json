@@ -2,7 +2,7 @@
   "expo": {
     "name": "Cante uma Nova Cancao",
     "slug": "NovaCancao",
-    "version": "3.0.0",
+    "version": "3.3.22",
     "orientation": "portrait",
     "icon": "./src/assets/cunc.png",
     "backgroundColor": "#000000",
@@ -29,7 +29,9 @@
     },
     "android": {
       "package": "br.org.icoc.novacancao",
-      "versionCode": 40,
+      "minSdkVersion": 26,
+      "targetSdkVersion": 33,
+      "versionCode": 46,
       "userInterfaceStyle": "automatic",
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/cunc.png"
