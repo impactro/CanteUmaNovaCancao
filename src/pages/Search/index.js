@@ -3,7 +3,6 @@ import { View, FlatList, TouchableOpacity, Image, Dimensions, Keyboard, Touchabl
 import { Container, ListView, SearchButton, SearchInput, styles } from "../../style/SearchStyle";
 import { Author, ButtonTitle, Kids, Title } from "../../../style";
 import { InfoMusic, List } from "../../style/LyricsStyle";
-import mockMusicData from '../../utils/mockMusicData.json';
 import themes from "../../style/themes";
 import { useToast } from "react-native-toast-notifications";
 import MusicContext from "../../contexts/music";
@@ -11,6 +10,7 @@ import { formatNameMusic } from "../../utils";
 import { AntDesign } from '@expo/vector-icons';
 import RecentSearches from "../../components/RecentSearches";
 import SearchesContext from "../../contexts/search";
+import musicSearchCore from '../../service/musicSearchCore.cjs';
 
 export default function Search({ navigation }) {
     const { show } = useToast();
@@ -21,7 +21,7 @@ export default function Search({ navigation }) {
 
     const {
         recentSearches,
-        setRecentSearchesInMemory,
+        recordRecentSearch,
         getRecentSearchesInMemory,
     } = useContext(SearchesContext)
 
@@ -33,98 +33,36 @@ export default function Search({ navigation }) {
 
     const widthScreen = Dimensions.get('window').width - 15;
 
-    const [textSearch, setTextSearch] = useState('');
     const [textValue, setTextValue] = useState('');
     const [dataMusic, setDataMusic] = useState([]);
-    const [dataMusicTemp, setDataMusicTemp] = useState([]);
     const [isFocus, setIsFocus] = useState(false);
 
     useEffect(() => {
         getRecentSearchesInMemory();
-    }, []);
+    }, [getRecentSearchesInMemory]);
 
     const searchMusic = () => {
         const message = 'Digite o nome da música para buscar';
         const notFoundMessage = 'Música não encontrada';
 
-        setDataMusic(dataMusicTemp);
+        const results = musicSearchCore.searchMusics(allMusics, textValue);
+        setDataMusic(results);
         setIsFocus(false);
 
-        if (textSearch.length <= 1) {
+        if (musicSearchCore.normalizeText(textValue).length <= 1) {
             setDataMusic([]);
             return show(message, { type: 'warning' });
         }
 
-        if (dataMusicTemp.length <= 0) {
+        if (results.length <= 0) {
             return show(notFoundMessage, { type: 'warning' });
         }
 
-        setSearchesInMemory();
+        recordRecentSearch(textValue);
         Keyboard.dismiss();
     }
 
-    const searcMusicTemp = (value) => {
-        const textSearch = normalize(value);
-
-        if (!value.length) return setDataMusic([]);
-        const mockMusic = JSON.parse(JSON.stringify(allMusics));
-        const filterTitle = mockMusic.filter(i => normalize(i.title).includes(textSearch));
-        const filterMusicLetter = mockMusic.filter(i => normalize(i.music.text).includes(textSearch));
-        const filterMusicNumber = mockMusic.filter(i => i.number.toString() == textSearch);
-        const filteredByText = filterTitle.length ? filterTitle : filterMusicLetter;
-        const filter = filteredByText.concat(filterMusicNumber);
-
-        setTextSearch(textSearch);
-        setDataMusicTemp(filter);
-        return filter;
-    }
-
-    const normalize = (value) => {
-        return value
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-zA-Z0-9]+/g, "")
-            .replace(/\s/g, '')
-    }
-
-    const setSearchesInMemory = (param = null) => {
-        const textInSearch = param !== null ? String(param).trim() : String(textValue).trim();
-        const date = new Date().getTime();
-
-        if (!recentSearches.length && textInSearch.length) {
-            const list = [
-                { id: 1, search: textInSearch, lastUpdate: date }
-            ];
-
-            setRecentSearchesInMemory(list);
-            return;
-        }
-
-        const getEqualsValues = recentSearches.find(({ search }) =>
-            String(search).toUpperCase() === String(textInSearch).toUpperCase()
-        );
-
-        const getIndex = recentSearches.findIndex(({ search }) =>
-            String(search).toUpperCase() === String(textInSearch).toUpperCase()
-        );
-
-        if (recentSearches.length && !getEqualsValues && textInSearch.length) {
-            const getAllIds = recentSearches.sort((a, b) => a.id > b.id);
-            const lastId = getAllIds[getAllIds.length - 1].id;
-
-            recentSearches.push({ id: lastId + 1, search: textInSearch, lastUpdate: date });
-            const dataNew = [...new Map(recentSearches.map(item => [item.search, item])).values()];
-
-            setRecentSearchesInMemory(dataNew);
-        }
-
-        if (recentSearches.length && getEqualsValues) {
-            recentSearches[getIndex].lastUpdate = date;
-            setRecentSearchesInMemory(recentSearches);
-        }
-
-    }
+    const findMusics = (value) => musicSearchCore.searchMusics(allMusics, value);
 
     const gotToMusicText = ({ number, title, music, author }) => {
         const { text, audio } = music;
@@ -171,23 +109,22 @@ export default function Search({ navigation }) {
     )
 
     function closeRecentsAndSearch(params) {
-        const musicSearched = searcMusicTemp(params);
+        const musicSearched = findMusics(params);
         setTextValue(params);
         setIsFocus(false);
         setDataMusic(musicSearched);
-        setSearchesInMemory(params);
+        recordRecentSearch(params);
     }
 
     function cancelSelection() {
         Keyboard.dismiss();
         setTextValue('');
-        setTextSearch('');
         setIsFocus(false);
         setDataMusic([]);
     }
 
     function changeText(value) {
-        searcMusicTemp(value);
+        if (!value.length) setDataMusic([]);
         setTextValue(value);
     }
 
@@ -212,9 +149,11 @@ export default function Search({ navigation }) {
                             <Pressable
                                 onPress={() => {
                                     setTextValue('');
-                                    setTextSearch('');
+                                    setDataMusic([]);
                                     setIsFocus(true);
                                 }}
+                                accessibilityRole="button"
+                                accessibilityLabel="Limpar pesquisa"
                                 style={[styles.pressPosition]}
                             >
                                 <View style={[styles.cleanInputIcon]}>
@@ -251,7 +190,7 @@ export default function Search({ navigation }) {
                         <FlatList
                             data={dataMusic}
                             renderItem={renderItem}
-                            keyExtractor={item => item.number}
+                            keyExtractor={item => String(item.number)}
                         />
                     </ListView>
                     : <View

@@ -8,6 +8,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
 import qs from 'qs';
 import { useToast } from "react-native-toast-notifications";
+import { APP_MAINTAINER_NAME, SUPPORT_CONTACT_EMAIL } from '../../config/legal';
 
 export default function About({ navigation }) {
     const { show } = useToast();
@@ -64,7 +65,7 @@ export default function About({ navigation }) {
 
     async function sendEmail() {
         try {
-            const to = 'anthony.silvaoliveira@outlook.com';
+            const to = SUPPORT_CONTACT_EMAIL;
 
             const query = qs.stringify({
                 subject: 'Cante Uma Nova Canção',
@@ -79,6 +80,7 @@ export default function About({ navigation }) {
 
             if (!canOpen) {
                 show('Não foi possível abrir o seu app de email', { type: 'danger' });
+                return;
             }
 
             return Linking.openURL(url);
@@ -179,8 +181,8 @@ export default function About({ navigation }) {
                     >
                         <VersionApp>
                             Versão: <B>{appInfo.expo.version}</B> {"\n"}
-                            OS: <B>{OsDevice()}</B>{"\n\n"}
-                            Beta
+                            OS: <B>{OsDevice()}</B>{"\n"}
+                            Manutenção: <B>{APP_MAINTAINER_NAME}</B>
                             {/* <Text style={{fontSize: 30}}>🎧</Text> */}
                         </VersionApp>
                     </Pressable>

@@ -52,6 +52,7 @@ import audioCatalog from '../../service/audioCatalog.cjs';
 import { trackMusicPlay } from '../../service/analytics';
 import musicPlayAnalyticsCore from '../../service/musicPlayAnalyticsCore.cjs';
 import qs from 'qs';
+import { SUPPORT_CONTACT_EMAIL } from '../../config/legal';
 
 export default function Music({ route, navigation }) {
     const {
@@ -328,7 +329,7 @@ export default function Music({ route, navigation }) {
 
     const submitProblemfound = async () => {
         try {
-            const to = 'anthony.silvaoliveira@outlook.com';
+            const to = SUPPORT_CONTACT_EMAIL;
             const subject = 'Quero relatar um problema';
             const body = `Olá, \n\nVi um erro na música ${musicTitle} do autor ${author}! \n\n\nRelate o problema aqui ...`;
             const query = qs.stringify({ subject, body, cc: '', bcc: '' });

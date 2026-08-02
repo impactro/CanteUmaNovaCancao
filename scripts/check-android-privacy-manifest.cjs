@@ -30,10 +30,12 @@ const candidates = findManifests(intermediates)
             fs.statSync(right).mtimeMs - fs.statSync(left).mtimeMs
     );
 
-assert.ok(
-    candidates.length,
-    'Manifest mesclado não encontrado; execute o build Android primeiro'
-);
+if (!candidates.length && process.argv.includes('--allow-missing')) {
+    console.log('Android privacy manifest skipped: execute o build Android para validar o artefato mesclado');
+    process.exit(0);
+}
+
+assert.ok(candidates.length, 'Manifest mesclado não encontrado; execute o build Android primeiro');
 
 const manifestPath = candidates[0];
 const manifest = fs.readFileSync(manifestPath, 'utf8');

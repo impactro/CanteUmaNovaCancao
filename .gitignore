@@ -7,13 +7,31 @@ npm-debug.*
 *.p12
 *.key
 google-services.json
+GoogleService-Info.plist
+.env
+.env.*
+!.env.example
+credentials*.json
+service-account*.json
+.secrets/
+secrets/
+credentials/
+*.pem
+*.pfx
+*.crt
+*.cer
 *.mobileprovision
 *.orig.*
+*.apk
+*.aab
+*.idsig
+artifacts/
 web-build/
 .vscode
 
 # Agent coordination and transient evidence
 .agents/
+.expo-shared/
 
 # macOS
 .DS_Store
@@ -64,7 +82,6 @@ yarn-error.log
 buck-out/
 \.buckd/
 *.keystore
-!debug.keystore
 
 # Bundle artifacts
 *.jsbundle

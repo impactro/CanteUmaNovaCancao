@@ -27,6 +27,7 @@ export default function PrivacyPolicy() {
 
             if (!canOpen) {
                 show('Não foi possível abrir o seu app de email', { type: 'danger' });
+                return;
             }
 
             return Linking.openURL(url);

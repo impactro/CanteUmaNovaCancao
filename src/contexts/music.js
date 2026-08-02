@@ -2,6 +2,7 @@ import React, { createContext, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useToast } from "react-native-toast-notifications";
 import { getAllMusics } from "../service/http";
+import localMusicCatalog from '../utils/mockMusicData.json';
 
 const MusicContextData = {
     allMusics: [],
@@ -17,7 +18,7 @@ const MusicContext = createContext(MusicContextData);
 export function MusicProvider({ children }) {
     const toast = useToast();
 
-    const [allMusics, setAllMusics] = useState([]);
+    const [allMusics, setAllMusics] = useState(localMusicCatalog);
     const [allCiphers, setAllCiphers] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
 

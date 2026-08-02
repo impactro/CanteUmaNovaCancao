@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Dimensions, Image, TouchableOpacity, View, VirtualizedList } from 'react-native';
 import { Container, InfoMusic, List, Wrapper } from '../../style/LyricsStyle';
-import { Author, Title } from '../../../style';
+import { Author, Kids, Title } from '../../../style';
 // import mockMusicData from '../../utils/mockMusicData.json';
 import MusicContext from '../../contexts/music';
 import LoadingIndicator from '../../components/Loading';

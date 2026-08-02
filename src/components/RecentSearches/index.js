@@ -16,7 +16,6 @@ export default function RecentSearches({ searchForRecent }) {
     } = useContext(SearchesContext);
 
     const [isOpenKeyboard, setIsOpenKeyboard] = useState(false);
-    const [dataSearchOrdained, setDataSearchOrdained] = useState([]);
 
     useEffect(() => {
         const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
@@ -32,29 +31,18 @@ export default function RecentSearches({ searchForRecent }) {
         };
     }, []);
 
-    useEffect(() => {
-        if (recentSearches && Boolean(recentSearches.length)) {
-            const ordained = recentSearches.sort((fisrt, second) => fisrt.lastUpdate < second.lastUpdate);
-            setDataSearchOrdained(ordained);
-        }
-    }, []);
-
     const hideKeyboard = () => {
         if (isOpenKeyboard) Keyboard.dismiss();
     }
 
     const clearAllRecentResearches = async () => {
-        const dataSearchEmpty = [];
-        setDataSearchOrdained(dataSearchEmpty);
         deleteAllSearch();
 
         show('As buscas recentes foram removidas', { type: 'success' });
     }
 
     const clearSelectedRecentResearches = async (idSearch) => {
-        const cloneData = dataSearchOrdained.filter(({ id }) => id !== idSearch);
-        setDataSearchOrdained(cloneData);
-        deleteSearchById(cloneData);
+        deleteSearchById(idSearch);
     }
 
     const confirmClean = () => {
@@ -91,6 +79,8 @@ export default function RecentSearches({ searchForRecent }) {
                         <Text style={[styles.textButton]}>{item.search}</Text>
                     </View>
                     <Pressable onPress={() => clearSelectedRecentResearches(item.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remover busca ${item.search}`}
                         style={{ padding: 5 }}>
                         <AntDesign name="close" size={16} color="#FFFFFFA1" />
                     </Pressable>
@@ -103,7 +93,7 @@ export default function RecentSearches({ searchForRecent }) {
         <View style={{ flex: 1 }}>
             <View style={[styles.header]}>
                 <Text style={[styles.titleHeader]}> Buscas recentes </Text>
-                <Pressable onPress={confirmClean}>
+                <Pressable onPress={confirmClean} accessibilityRole="button" accessibilityLabel="Limpar buscas recentes">
                     <Text
                         style={[styles.titleHeader, {
                             color: themes.dark.colors.primary, fontSize: 15
@@ -114,9 +104,9 @@ export default function RecentSearches({ searchForRecent }) {
                 </Pressable>
             </View>
             <FlatList
-                data={dataSearchOrdained}
+                data={recentSearches}
                 renderItem={renderItem}
-                keyExtractor={item => item.id}
+                keyExtractor={item => String(item.id)}
                 onScrollBeginDrag={hideKeyboard}
                 onTouchStart={hideKeyboard}
                 showsVerticalScrollIndicator={false}

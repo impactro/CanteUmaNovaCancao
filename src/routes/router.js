@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import Lyrics from '../pages/Lyrics';
 import Cipher from '../pages/Cipher';
 import Search from '../pages/Search';
@@ -11,14 +11,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { ThemeProvider } from 'styled-components/native';
 import { Dimensions } from 'react-native';
-import { typeDevice, wait } from '../utils';
+import { typeDevice } from '../utils';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Wrapper } from '../../style';
 import * as NavigationBar from 'expo-navigation-bar';
 import MusicContext from '../contexts/music';
 import ConnectionContext from '../contexts/connection';
-import Loader from '../components/Loading/LoaderScreen';
 import TermsOfUse from '../components/TermsOfUse';
 import PrivacyPolicy from '../components/PrivacyPolicy';
 import SpecialPage from '../components/SpecialPage';
@@ -238,18 +237,12 @@ export default function Router() {
         getNetworkStateAsync
     } = useContext(ConnectionContext);
 
-    const [inLoading, setInLoading] = useState(true);
-
     let heightScreen = null;
 
     useEffect(() => {
         getNetworkStateAsync();
         getStorageMusic();
     }, [])
-
-    useEffect(() => {
-        wait(4050).then(() => setInLoading(false));
-    }, [inLoading])
 
     const trackCurrentScreen = () => {
         const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
@@ -271,20 +264,6 @@ export default function Router() {
     if (typeDevice.Android()) {
         NavigationBar.setButtonStyleAsync("light");
         NavigationBar.setBackgroundColorAsync("#1A1A1A");
-    }
-
-    if (inLoading) {
-        if (typeDevice.Android()) {
-            NavigationBar.setButtonStyleAsync("dark");
-            NavigationBar.setBackgroundColorAsync("#0B97D3");
-        }
-
-        return (
-            <>
-                <StatusBar translucent={true} style={themes.dark.barColor} />
-                <Loader />
-            </>
-        )
     }
 
     return (
