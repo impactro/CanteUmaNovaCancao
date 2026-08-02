@@ -23,7 +23,8 @@ export const AppName = styled.Text`
     font-weight: 500;
     ${({ isLink, theme }) => isLink &&
         `   
-            text-decoration: underline ${theme.colors.primary}
+            text-decoration-line: underline;
+            text-decoration-color: ${theme.colors.primary};
             font-weight: 700;
             top: 3.5px;
         `

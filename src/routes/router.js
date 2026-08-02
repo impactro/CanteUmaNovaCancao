@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import Lyrics from '../pages/Lyrics';
 import Cipher from '../pages/Cipher';
 import Search from '../pages/Search';
@@ -9,20 +9,20 @@ import MusicCipher from '../components/MusicCipher';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
-import { ThemeProvider } from 'styled-components';
+import { ThemeProvider } from 'styled-components/native';
 import { Dimensions } from 'react-native';
 import { typeDevice, wait } from '../utils';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Wrapper } from '../../style';
 import * as NavigationBar from 'expo-navigation-bar';
-import ErrorScreen from '../components/ErrorScreen';
 import MusicContext from '../contexts/music';
 import ConnectionContext from '../contexts/connection';
 import Loader from '../components/Loading/LoaderScreen';
 import TermsOfUse from '../components/TermsOfUse';
 import PrivacyPolicy from '../components/PrivacyPolicy';
 import SpecialPage from '../components/SpecialPage';
+import { trackScreenRoute } from '../service/analytics';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -228,18 +228,16 @@ function AboutScreenStack({ route }) {
 }
 
 export default function Router() {
+    const navigationRef = useRef(null);
+    const routeNameRef = useRef(null);
     const {
-        allMusics,
-        getMusics,
         getStorageMusic
     } = useContext(MusicContext);
 
     const {
-        isConnection,
         getNetworkStateAsync
     } = useContext(ConnectionContext);
 
-    const [showPageError, setShowPageError] = useState(false);
     const [inLoading, setInLoading] = useState(true);
 
     let heightScreen = null;
@@ -253,22 +251,18 @@ export default function Router() {
         wait(4050).then(() => setInLoading(false));
     }, [inLoading])
 
-    useEffect(() => {
-        const checkingConnectionAndMusicLocal = !isConnection && !Boolean(allMusics.length);
+    const trackCurrentScreen = () => {
+        const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
 
-        setShowPageError(checkingConnectionAndMusicLocal);
-        if (checkingConnectionAndMusicLocal || inLoading) return;
+        if (!currentRouteName) {
+            return;
+        }
 
-        getMusics();
-    }, [inLoading, isConnection, allMusics])
-
-    const forceReload = () => {
-        setInLoading(true);
-        getNetworkStateAsync();
-        getMusics();
-        wait(5000);
-        setShowPageError(false);
-    }
+        if (routeNameRef.current !== currentRouteName) {
+            trackScreenRoute(currentRouteName);
+            routeNameRef.current = currentRouteName;
+        }
+    };
 
     if (Dimensions.get('window').height < 600) {
         heightScreen = Dimensions.get('window').height - 510;
@@ -293,24 +287,15 @@ export default function Router() {
         )
     }
 
-    if (showPageError) {
-        if (typeDevice.Android()) {
-            NavigationBar.setButtonStyleAsync("light");
-            NavigationBar.setBackgroundColorAsync("#2A2A2A");
-        }
-
-        return (
-            <>
-                <StatusBar translucent={true} style={themes.dark.barColor} />
-                <ErrorScreen onChange={() => forceReload()} />
-            </>
-        )
-    }
-
     return (
         <ThemeProvider theme={themes.dark}>
             <StatusBar translucent={true} style={themes.dark.barColor} />
-            <NavigationContainer theme={themes.dark}>
+            <NavigationContainer
+                ref={navigationRef}
+                theme={themes.dark}
+                onReady={trackCurrentScreen}
+                onStateChange={trackCurrentScreen}
+            >
                 <Tab.Navigator
                     backBehavior='history'
                     sceneContainerStyle={{ backgroundColor: themes.dark.background }}
@@ -332,7 +317,7 @@ export default function Router() {
                             const actions = {
                                 'Home': () => iconName = focused ? 'musical-notes' : 'musical-notes-outline',
                                 'Cipher': () => iconName = focused ? 'book' : 'book-outline',
-                                'Search': () => iconName = focused ? 'md-search' : 'md-search-outline',
+                                'Search': () => iconName = focused ? 'search' : 'search-outline',
                                 'About': () => iconName = focused ? 'menu' : 'menu-outline',
                             }
 

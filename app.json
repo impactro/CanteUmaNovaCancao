@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "Cante uma Nova Cancao",
+    "name": "Cante uma Nova Canção",
     "slug": "NovaCancao",
     "version": "3.3.49",
+    "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./src/assets/cunc.png",
     "backgroundColor": "#000000",
@@ -33,11 +34,17 @@
     },
     "android": {
       "package": "br.org.icoc.novacancao",
-      "minSdkVersion": 31,
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
-      "buildToolsVersion": "34.0.0",
       "versionCode": 49,
+      "googleServicesFile": "./google-services.json",
+      "blockedPermissions": [
+        "com.google.android.gms.permission.AD_ID",
+        "android.permission.ACCESS_ADSERVICES_AD_ID",
+        "android.permission.ACCESS_ADSERVICES_ATTRIBUTION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
       "userInterfaceStyle": "automatic",
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/cunc.png"
@@ -47,6 +54,39 @@
       "eas": {
         "projectId": "e840c608-30d7-4fde-8516-a0db43d421f5"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0"
+          }
+        }
+      ],
+      "expo-web-browser",
+      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/analytics",
+        {
+          "ios": {
+            "withoutAdIdSupport": true
+          }
+        }
+      ],
+      "./plugins/withMinimalFirebaseAnalytics.cjs",
+      "./plugins/withAndroidReleaseSigning.cjs",
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-asset"
+    ]
   }
 }

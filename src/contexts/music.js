@@ -4,8 +4,8 @@ import { useToast } from "react-native-toast-notifications";
 import { getAllMusics } from "../service/http";
 
 const MusicContextData = {
-    allMusics: {},
-    allCiphers: {},
+    allMusics: [],
+    allCiphers: [],
     refreshing: false,
     getMusics: () => { },
     getStorageMusic: () => { },
@@ -17,15 +17,16 @@ const MusicContext = createContext(MusicContextData);
 export function MusicProvider({ children }) {
     const toast = useToast();
 
-    const [allMusics, setAllMusics] = useState({});
-    const [allCiphers, setAllCiphers] = useState({});
+    const [allMusics, setAllMusics] = useState([]);
+    const [allCiphers, setAllCiphers] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
 
     const getMusics = async () => {
         try {
             setRefreshing(true);
             const response = await getAllMusics();
-            storageMusic(response);
+            setAllMusics(response);
+            await storageMusic(response);
 
             setRefreshing(false);
         } catch (error) {
@@ -43,19 +44,22 @@ export function MusicProvider({ children }) {
     }
 
     const getStorageMusic = async () => {
-        const getMusicInStorage = await AsyncStorage.getItem('@ALL_MUSICS');
-        const convertMusicInStorage = JSON.parse(getMusicInStorage);
-
-        setAllMusics(convertMusicInStorage ?? {});
+        try {
+            const localCatalog = await getAllMusics();
+            setAllMusics(localCatalog);
+            await storageMusic(localCatalog);
+        } catch (error) {
+            toast.show('Não foi possível carregar o catálogo local', { type: 'danger' });
+            setAllMusics([]);
+        }
     }
 
     const getStorageCipher = async () => {
         setRefreshing(true);
-        const getMusicInStorage = await AsyncStorage.getItem('@ALL_MUSICS');
-        const convertMusicInStorage = JSON.parse(getMusicInStorage);
-        const ciphers = convertMusicInStorage?.filter(cipher => cipher.music.cifra);
+        const localCatalog = allMusics.length ? allMusics : await getAllMusics();
+        const ciphers = localCatalog.filter(cipher => cipher.music.cifra);
 
-        setAllCiphers(ciphers ?? {});
+        setAllCiphers(ciphers);
         setRefreshing(false);
 
     }

@@ -1,29 +1,44 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { styles } from "../../../style/LoaderScreenStyle";
-import { MotiImage, MotiView } from 'moti';
-import { View } from "react-native";
+import { Animated, View } from "react-native";
 
 export default function Loader() {
+    const progress = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const animation = Animated.loop(
+            Animated.timing(progress, {
+                toValue: 1,
+                duration: 1000,
+                useNativeDriver: true,
+            }),
+            {
+                iterations: 4,
+                resetBeforeIteration: true,
+            }
+        );
+
+        animation.start();
+
+        return () => animation.stop();
+    }, [progress]);
+
     return (
         <View
             style={[styles.container]}
         >
-            <MotiImage
-                animateInitialState={true}
-                from={{
-                    translateY: -30,
-                }}
-                animate={{
-                    translateY: 0,
-                    opacity: 1
-                }}
-                transition={{
-                    type: 'timing',
-                    duration: 1000,
-                    repeat: 4
-                }}
-
-                style={[{ width: '50%', height: '100%' }]}
+            <Animated.Image
+                style={[{
+                    width: '50%',
+                    height: '100%',
+                    opacity: progress,
+                    transform: [{
+                        translateY: progress.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-30, 0],
+                        }),
+                    }],
+                }]}
                 source={require('../../../assets/splash_logo.png')}
             />
         </View>

@@ -6,12 +6,14 @@ npm-debug.*
 *.p8
 *.p12
 *.key
+google-services.json
 *.mobileprovision
 *.orig.*
 web-build/
-package-lock.json
-yarn.lock
 .vscode
+
+# Agent coordination and transient evidence
+.agents/
 
 # macOS
 .DS_Store

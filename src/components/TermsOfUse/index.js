@@ -1,7 +1,8 @@
 import React from "react";
-import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Linking, ScrollView, Text } from "react-native";
 import { AppName, Container, Subtitle, Title, Wrapper } from "../../style/TermsAndPrivacyStyle";
 import { useToast } from "react-native-toast-notifications";
+import { PRIVACY_CONTACT_EMAIL, PRIVACY_POLICY_URL } from "../../config/legal";
 import qs from 'qs';
 
 export default function TermsOfUse() {
@@ -9,7 +10,7 @@ export default function TermsOfUse() {
 
     async function sendEmail() {
         try {
-            const to = 'anthony.silvaoliveira@outlook.com';
+            const to = PRIVACY_CONTACT_EMAIL;
             const body = 'Olá, \n\n Estou com dúvidas sobre os Termos de Uso do Cante Uma Nova Canção,\n pode me ajudar ? \n\n Obrigado(a).';
 
             const query = qs.stringify({
@@ -33,14 +34,10 @@ export default function TermsOfUse() {
             show('Ops! Houve um erro ao abrir o seu app de email', { type: 'danger' });
         }
     }
-    const link = () => Linking.openURL('https://policies.google.com/?hl=pt');
+    const openPrivacyPolicy = () => Linking.openURL(PRIVACY_POLICY_URL);
 
     const goTo = (fun, value) => (
-        <View>
-            <TouchableOpacity onPress={() => fun()}>
-                <AppName isLink>{value}</AppName>
-            </TouchableOpacity>
-        </View>
+        <AppName isLink onPress={fun}>{value}</AppName>
     );
 
     return (
@@ -52,7 +49,7 @@ export default function TermsOfUse() {
                         Seja bem-vindo ao <AppName>"Cante Uma Nova Canção"</AppName>!{"\n"}
                         Por favor, leia atentamente os termos antes de usar o aplicativo.
                         Ao usar o aplicativo, você concorda com estes termos de uso.
-
+                        A política pública de privacidade está disponível em {goTo(openPrivacyPolicy, PRIVACY_POLICY_URL)}.
                     </Text>{"\n\n"}
 
                     <Subtitle>1. Uso do aplicativo </Subtitle>{"\n\n"}
@@ -69,9 +66,12 @@ export default function TermsOfUse() {
                     </Text>{"\n\n"}
                     <Subtitle>3. Coleta de dados</Subtitle>{"\n\n"}
                     <Text>
-                        O aplicativo utiliza os serviços de terceiros como o {goTo(link, 'Google Analytics')} para coletar dados sobre o uso do aplicativo,
-                        como: número de usuários, as músicas mais populares e as falhas do aplicativo.{'\n'}
-                        Nenhuma informação pessoal é coletada pelo {goTo(link, 'Google Analytics.')}
+                        O aplicativo não exige cadastro e não exibe anúncios.
+                        Usamos o Google Analytics for Firebase para estatísticas básicas de uso, como telas abertas e músicas
+                        reproduzidas, com a finalidade de entender o funcionamento e melhorar o aplicativo.
+                        Não coletamos texto de pesquisa, e-mail, contato, localização precisa, identificação pessoal ou perfil
+                        publicitário. Esses dados não são vendidos nem usados para anúncios.
+                        O catálogo e as pesquisas recentes são armazenados localmente no dispositivo.
                     </Text>{"\n\n"}
                     <Subtitle>4. Modificações</Subtitle>{"\n\n"}
                     <Text>
@@ -90,7 +90,7 @@ export default function TermsOfUse() {
                     <Subtitle>7. Contato</Subtitle>{"\n\n"}
                     <Text>
                         Se você tiver alguma dúvida sobre estes Termos de Uso,
-                        entre em contato conosco pelo e-mail: {goTo(sendEmail, 'anthony.silvaoliveira@outlook.com')}
+                        entre em contato conosco pelo e-mail: {goTo(sendEmail, PRIVACY_CONTACT_EMAIL)}
                     </Text>
                 </Wrapper>
             </ScrollView>

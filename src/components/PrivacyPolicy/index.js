@@ -1,8 +1,9 @@
 import React from "react";
-import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Linking, ScrollView, Text } from "react-native";
 import { B } from "../../../style";
 import { AppName, Container, Subtitle, Title, Wrapper } from "../../style/TermsAndPrivacyStyle";
 import { useToast } from "react-native-toast-notifications";
+import { PRIVACY_CONTACT_EMAIL, PRIVACY_POLICY_URL } from "../../config/legal";
 import qs from 'qs';
 
 export default function PrivacyPolicy() {
@@ -10,7 +11,7 @@ export default function PrivacyPolicy() {
 
     async function sendEmail() {
         try {
-            const to = 'anthony.silvaoliveira@outlook.com';
+            const to = PRIVACY_CONTACT_EMAIL;
             const body = 'Olá, \n\n Estou com dúvidas sobre as Políticas de Privacidade do Cante Uma Nova Canção,\n pode me ajudar ? \n\n Obrigado(a).';
             
             const query = qs.stringify({
@@ -35,59 +36,63 @@ export default function PrivacyPolicy() {
         }
     }
 
-    const link = () => Linking.openURL('https://policies.google.com/?hl=pt');
+    const openPrivacyPolicy = () => Linking.openURL(PRIVACY_POLICY_URL);
 
     const goTo = (fun, value) => (
-        <View>
-            <TouchableOpacity onPress={() => fun()}>
-                <AppName isLink>{value}</AppName>
-            </TouchableOpacity>
-        </View>
+        <AppName isLink onPress={fun}>{value}</AppName>
     );
 
     return (
         <Container>
             <ScrollView>
                 <Wrapper>
-                    <Title>Políticas Privacidade</Title>{"\n\n"}
+                    <Title>Política de Privacidade</Title>{"\n\n"}
                     <Text>
-                        Esta Política de Privacidade descreve como o aplicativo <AppName>"Cante Uma Nova Canção"</AppName> coleta,
-                        usa e protege as informações pessoais dos usuários do aplicativo.A sua privacidade é muito importante para nós.
+                        Esta tela resume como o aplicativo <AppName>"Cante Uma Nova Canção"</AppName> trata dados.
+                        A versão pública e atualizada desta política está disponível em {goTo(openPrivacyPolicy, PRIVACY_POLICY_URL)}.
                     </Text>{"\n\n"}
-                    <Subtitle>1. Informações que coletamos</Subtitle> {"\n\n"}
+                    <Subtitle>1. Dados tratados pelo aplicativo</Subtitle> {"\n\n"}
                     <Text>
-                        O aplicativo <AppName>"Cante Uma Nova Canção"</AppName> não coleta nenhuma informação pessoal dos usuários,
-                        exceto informações coletadas pelo {goTo(link, 'Google Analytics')}
+                        O aplicativo não exige cadastro e não exibe anúncios.
+                        O catálogo de músicas e o histórico de pesquisas ficam armazenados localmente no dispositivo.
+                        Para estatísticas de uso, o Google Analytics for Firebase trata um identificador da instalação,
+                        sessões, telas abertas, músicas reproduzidas, versão do aplicativo, versão do sistema operacional,
+                        informações gerais do dispositivo e localização aproximada derivada da rede.
+                        Não enviamos o texto pesquisado, e-mail, contato, localização precisa, User ID ou propriedades pessoais.
                     </Text>{"\n\n"}
-                    <Subtitle>2. Como usamos as informações</Subtitle>{"\n\n"}
+                    <Subtitle>2. Acesso à internet</Subtitle>{"\n\n"}
                     <Text>
-                        Usamos as informações coletadas pelo {goTo(link, 'Google Analytics')} para:{"\n"}
-                        - Análise de dados: como entender as tendências do usuário e melhorar o desempenho do aplicativo.
+                        A conexão é usada para reproduzir ou baixar os áudios, abrir páginas externas solicitadas pelo usuário
+                        e enviar os eventos estatísticos mínimos descritos acima.
+                        Os provedores de hospedagem e de rede podem processar dados técnicos, como endereço IP e registros de acesso,
+                        conforme suas próprias políticas.
                     </Text>{"\n\n"}
-                    <Subtitle>3. Compartilhamento de informações</Subtitle>{"\n\n"}
+                    <Subtitle>3. Compartilhamento, retenção e exclusão</Subtitle>{"\n\n"}
                     <Text>
-                        Não compartilhamos informações pessoais com terceiros, exceto com o {goTo(link, 'Google Analytics.')}
+                        O aplicativo não envia o histórico de pesquisas nem o catálogo armazenado para o desenvolvedor.
+                        Os dados estatísticos são processados pelo Google Analytics for Firebase para medição e melhoria do
+                        aplicativo; não são vendidos, usados para anúncios ou para personalização publicitária.
+                        O histórico pode ser apagado na própria tela de pesquisa. Os demais dados locais são removidos ao limpar
+                        os dados do aplicativo ou desinstalá-lo.
                     </Text>{"\n\n"}
                     <Subtitle>4. Segurança de informações</Subtitle>{"\n\n"}
                     <Text>
-                        Temos medidas de segurança adequadas em vigor para proteger suas informações pessoais contra acesso não autorizado, uso, alteração ou divulgação.
-                        No entanto, nenhuma medida de segurança é infalível e não podemos garantir que suas informações pessoais estejam completamente seguras,
-                        mas reiteramos que não coletamos informações pessoais dos usuários.
+                        Aplicamos medidas técnicas compatíveis com a natureza do aplicativo.
+                        Nenhum sistema conectado à internet pode oferecer segurança absoluta.
                     </Text>{"\n\n"}
                     <Subtitle>5. Alterações na política de privacidade</Subtitle>{"\n\n"}
                     <Text>
                         Podemos atualizar esta Política de Privacidade a qualquer momento.
-                        A nova versão da política de privacidade entrará em vigor quando for publicada no aplicativo.
-                        Se você continuar a usar o aplicativo após modificações, significa que você concorda com os novos termos.
+                        A versão pública indicada nesta tela é a fonte canônica e informará a data da última atualização.
                     </Text>{"\n\n"}
                     <Subtitle>6. Contato</Subtitle>{"\n\n"}
                     <Text>
                         Se você tiver alguma dúvida sobre esta Política de Privacidade,
-                        entre em contato conosco pelo e-mail: {goTo(sendEmail, 'anthony.silvaoliveira@outlook.com')}
+                        entre em contato conosco pelo e-mail: {goTo(sendEmail, PRIVACY_CONTACT_EMAIL)}
                     </Text>
                     {"\n\n"}
                     <Text>
-                        Esta política é efetiva a partir de <B>Mar</B>/<B>2023</B>.
+                        Resumo interno revisado em <B>Jul</B>/<B>2026</B>.
                     </Text>
                 </Wrapper>
             </ScrollView>

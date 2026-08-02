@@ -1,11 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Image, Linking, Pressable, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+    Alert,
+    Image,
+    Linking,
+    Pressable,
+    ScrollView,
+    Share,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { Entypo, Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { Modalize } from 'react-native-modalize';
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS, PitchCorrectionQuality } from 'expo-av';
+import {
+    setAudioModeAsync,
+    useAudioPlayer,
+    useAudioPlayerStatus
+} from 'expo-audio';
 import { Wrapper } from '../../../style';
-import * as FileSystem from 'expo-file-system';
-import * as Clipboard from 'expo-clipboard'
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import Slider from '@react-native-community/slider';
 import themes from '../../style/themes';
@@ -30,6 +43,14 @@ import {
 } from '../../style/MusicStyle';
 import { useToast } from 'react-native-toast-notifications';
 import { typeDevice } from '../../utils';
+import {
+    downloadAudio as downloadAudioToDevice,
+    getCachedAudioUri,
+    removeDownloadedAudio
+} from '../../service/audioCache';
+import audioCatalog from '../../service/audioCatalog.cjs';
+import { trackMusicPlay } from '../../service/analytics';
+import musicPlayAnalyticsCore from '../../service/musicPlayAnalyticsCore.cjs';
 import qs from 'qs';
 
 export default function Music({ route, navigation }) {
@@ -43,131 +64,60 @@ export default function Music({ route, navigation }) {
         cipher,
         isVideo,
         linkVideo,
-        number
+        numMusic
     } = route.params;
 
     const { show } = useToast();
+    const modalizeRef = useRef(null);
+    const menuModalRef = useRef(null);
+    const wasPlayingBeforeSeek = useRef(false);
+    const musicPlayTracker = useRef(
+        new musicPlayAnalyticsCore.MusicPlayExecutionTracker()
+    );
+    const player = useAudioPlayer(null, { updateInterval: 500 });
+    const playerStatus = useAudioPlayerStatus(player);
+
+    const [positionModal, setPositionModal] = useState('');
+    const [isDownloaded, setIsDownloaded] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [sourceUri, setSourceUri] = useState(null);
 
     const data = {
         'sonho': require('../../assets/o_sonho.png'),
         'caminhos': require('../../assets/caminhos.png'),
         'undefined': require('../../assets/cunc.png')
-    }
+    };
 
-    const modalizeRef = useRef(null);
-    const menuModalRef = useRef(null);
-
-    const [typeIcon, setTypeIcon] = useState('play');
-    const [musicStarted, setMusicStarted] = useState(false);
-    const [sound, setSound] = useState();
-    const [infoFile, setInfoFile] = useState({});
-    const [progress, setProgress] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [isMounted, setIsMounted] = useState(false);
-    const [positionModal, setPositionModal] = useState('');
-    const [dataList, setDataList] = useState([]);
-
-    useEffect(() => {
-        loadMusic();
-        dataModalOptions();
-        renderButtonHeaderOptions();
-    }, []);
-
-    useEffect(() => {
-        return () => {
-            sound && sound.unloadAsync();
-        }
-    }, [sound]);
-
-    useEffect(() => {
-        if (progress > 0 && progress === duration) {
-            setTypeIcon('play');
-            sound.stopAsync();
-        }
-    }, [progress, duration, sound]);
-
-    useEffect(() => {
-        const position = infoFile.positionMillis / 1000;
-        const duration = infoFile.durationMillis / 1000;
-
-        if (infoFile && infoFile.positionMillis) {
-            setProgress(position);
-            setDuration(duration);
-        } else {
-            setProgress(0);
-            setDuration(0);
-        }
-
-    }, [infoFile]);
-
-    async function loadMusic() {
+    const audioSource = useMemo(() => {
         try {
-            if (!audio) return;
+            if (!audio) {
+                return null;
+            }
 
-            const source = {
-                uri: encodeURI(`https://novacancao.azureedge.net/${audio}`)
+            const path = audioCatalog.normalizeAudioPath(audio);
+            return {
+                path,
+                remoteUri: audioCatalog.resolveAudioUrl(path)
             };
-
-            const initialStatus = {
-                shouldPlay: false,
-                pitchCorrectionQuality: PitchCorrectionQuality.High,
-                shouldCorrectPitch: true
-            };
-
-            await Audio.setAudioModeAsync({
-                playsInSilentModeIOS: true,
-                staysActiveInBackground: true,
-                playThroughEarpieceAndroid: false,
-                interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-                interruptionModeIOS: InterruptionModeIOS.DoNotMix
-            });
-
-            const { sound } = await Audio.Sound.createAsync(
-                source,
-                initialStatus
-            );
-
-            setSound(sound);
-            setIsMounted((await sound.getStatusAsync()).isLoaded);
-
-            sound.setOnPlaybackStatusUpdate(setInfoFile);
         } catch (error) {
-            console.log('Deu erro: ', error);
-
-            setIsMounted(false);
-            const notFoundMessage = 'Não foi possível carregar a música';
-            return show(notFoundMessage, { type: 'danger' });
+            console.warn('Referência de áudio ignorada:', error.message);
+            return null;
         }
-    }
+    }, [audio]);
 
-    async function playOrPauseSound(params) {
-        if (musicStarted) {
-            params.includes('play') ? await sound.playAsync() : await sound.pauseAsync();
-            return;
-        }
+    const lockScreenMetadata = useMemo(() => ({
+        title: musicTitle,
+        artist: author,
+        albumTitle: 'Cante uma Nova Canção'
+    }), [author, musicTitle]);
 
-        if (!params.includes('open')) {
-            await sound.playAsync();
-            setMusicStarted(true);
-        }
-    }
-
-    // const checkFile = async () => {
-    //     if (typeDevice.mobile()) {
-    //         const file = FileSystem.documentDirectory + 'O Sonho.mp3'
-    //         const audio = await FileSystem.getInfoAsync(file)
-    //         console.log(audio)
-    //     }
-    // }
-
-    // useEffect(() => {
-    //     checkFile()
-    // })
-
-    const renderButtonHeaderOptions = () => {
+    useEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <Pressable onPress={openModalMenu} android_disableSound={true}>
+                <Pressable
+                    onPress={() => menuModalRef.current?.open()}
+                    android_disableSound
+                >
                     <View style={[style.headerContainer]}>
                         <View style={[style.headerButton]}>
                             <Entypo name="dots-three-horizontal" size={15} color="#FFF" />
@@ -176,103 +126,162 @@ export default function Music({ route, navigation }) {
                 </Pressable>
             ),
         });
+    }, [navigation]);
+
+    useEffect(() => {
+        let active = true;
+
+        const prepareAudio = async () => {
+            if (!audioSource) {
+                return;
+            }
+
+            await setAudioModeAsync({
+                playsInSilentMode: true,
+                shouldPlayInBackground: true,
+                interruptionMode: 'doNotMix',
+                shouldRouteThroughEarpiece: false
+            });
+
+            const localUri = getCachedAudioUri(audioSource.path);
+            const nextUri = localUri || audioSource.remoteUri;
+
+            if (!active) {
+                return;
+            }
+
+            setIsDownloaded(Boolean(localUri));
+            setSourceUri(nextUri);
+            musicPlayTracker.current.sourceChanged();
+            player.replace(nextUri);
+        };
+
+        prepareAudio().catch(error => {
+            console.error('Não foi possível preparar o áudio:', error);
+            show('Não foi possível carregar a música', { type: 'danger' });
+        });
+
+        return () => {
+            active = false;
+            player.clearLockScreenControls();
+        };
+    }, [audioSource, player, show]);
+
+    const progress = playerStatus.currentTime || 0;
+    const duration = playerStatus.duration || 0;
+    const typeIcon = playerStatus.playing ? 'pause' : 'play';
+
+    useEffect(() => {
+        if (
+            playerStatus.playing &&
+            musicPlayTracker.current.playbackStarted()
+        ) {
+            trackMusicPlay(numMusic);
+        }
+    }, [numMusic, playerStatus.playing]);
+
+    useEffect(() => {
+        if (playerStatus.didJustFinish) {
+            musicPlayTracker.current.playbackFinished();
+        }
+    }, [playerStatus.didJustFinish]);
+
+    const activateLockScreenControls = () => {
+        player.setActiveForLockScreen(
+            true,
+            lockScreenMetadata,
+            {
+                showSeekBackward: true,
+                showSeekForward: true
+            }
+        );
     };
 
-    const openModalMenu = () => {
-        menuModalRef.current?.open();
-    }
-    const closeModalMusicAudio = () => {
-        setPositionModal('initial');
-        modalizeRef.current?.close();
-    }
-
-    const showModalMusicAudio = () => {
-        modalizeRef.current?.open();
-    }
-
-    const playOrPause = () => {
-        if (typeIcon === 'play') {
-            setTypeIcon('pause');
-            playOrPauseSound('play');
+    const playOrPause = async () => {
+        if (!audioSource || !sourceUri) {
+            show('Esta música não possui áudio disponível', { type: 'warning' });
+            return;
         }
 
-        if (typeIcon === 'pause' && progress > 0) {
-            setTypeIcon('play');
-            playOrPauseSound('pause');
-        }
-    }
-
-    const forwardButton = () => {
-        if (infoFile && infoFile.positionMillis) sound.setPositionAsync(infoFile.positionMillis + 10000);
-    }
-
-    const backwardButton = () => {
-        if (infoFile && infoFile.positionMillis) sound.setPositionAsync(infoFile.positionMillis - 10000);
-    }
-
-    const advancedMusic = ({ status, value }) => {
-        let timeMusic = value * 1000;
-
-        if (status == 'start') {
-            playOrPauseSound('pause');
-            setTypeIcon('play');
+        if (playerStatus.playing) {
+            player.pause();
+            musicPlayTracker.current.playbackPaused();
+            return;
         }
 
-        if (status == 'completed') {
-
-            if (timeMusic >= infoFile.positionMillis) {
-                sound.setPositionAsync(timeMusic);
-                playOrPauseSound('play');
-                setTypeIcon('pause');
-                return;
-            }
-
-            if (timeMusic <= infoFile.positionMillis) {
-                sound.setPositionAsync(timeMusic);
-                playOrPauseSound('play');
-                setTypeIcon('pause');
-                setProgress(timeMusic);
-                return;
-            }
+        if (duration > 0 && progress >= duration) {
+            await player.seekTo(0);
         }
-    }
 
-    const formatTime = (number) => {
-        const minutes = Math.floor(number / 60);
-        const seconds = Math.floor(number % 60);
+        musicPlayTracker.current.intentToPlay(playerStatus);
+        activateLockScreenControls();
+        player.play();
+    };
 
-        const minutesFormated = String(minutes).padStart(2, '0');
-        const secondsFormated = String(seconds).padStart(2, '0');
+    const forwardButton = async () => {
+        const nextPosition = duration
+            ? Math.min(progress + 10, duration)
+            : progress + 10;
 
-        return `${minutesFormated}:${secondsFormated}`;
-    }
+        await player.seekTo(nextPosition);
+    };
 
-    const ProgressBar = ({ progress = 0, duration }) => {
-        const [width, setWidth] = useState('0%');
+    const backwardButton = async () => {
+        await player.seekTo(Math.max(progress - 10, 0));
+    };
 
-        useEffect(() => {
-            const musicPercent = ((progress / duration) * 100) || 0;
-            setWidth(`${musicPercent}%`);
-        }, [progress])
+    const advancedMusic = async ({ status, value }) => {
+        if (status === 'start') {
+            wasPlayingBeforeSeek.current = playerStatus.playing;
+            player.pause();
+            musicPlayTracker.current.playbackPaused();
+            return;
+        }
+
+        await player.seekTo(value);
+        musicPlayTracker.current.playbackSeeked(value);
+
+        if (wasPlayingBeforeSeek.current) {
+            musicPlayTracker.current.intentToPlay({
+                ...playerStatus,
+                currentTime: value
+            });
+            activateLockScreenControls();
+            player.play();
+        }
+    };
+
+    const formatTime = value => {
+        const safeValue = Number.isFinite(value) ? value : 0;
+        const minutes = Math.floor(safeValue / 60);
+        const seconds = Math.floor(safeValue % 60);
+
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
+
+    const ProgressBar = ({ currentProgress = 0, totalDuration = 0 }) => {
+        const musicPercent = totalDuration > 0
+            ? Math.min((currentProgress / totalDuration) * 100, 100)
+            : 0;
 
         return (
             <View style={style.container}>
-                <View style={[style.progress, { width }]} />
+                <View style={[style.progress, { width: `${musicPercent}%` }]} />
             </View>
         );
-    }
+    };
 
     const copyText = () => {
         const copyMusic = `${musicTitle}\n${author}\n\n${musicTxt}`;
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert(
-            'Deseja copiar ?',
-            `Você quer copiar a música ${musicTitle} - ${author} ?`,
+            'Deseja copiar?',
+            `Você quer copiar a música ${musicTitle} - ${author}?`,
             [
                 {
                     text: 'Copiar',
-                    onPress: async () => await Clipboard.setStringAsync(copyMusic)
+                    onPress: async () => Clipboard.setStringAsync(copyMusic)
                 },
                 {
                     text: 'Cancelar',
@@ -280,29 +289,6 @@ export default function Music({ route, navigation }) {
                 }
             ]
         );
-    }
-
-    const dataModalOptions = () => {
-        const list = [
-            { id: 1, label: 'Compartilhar', visible: true, icon: 'share', fun: 'sharing' },
-            { id: 2, label: `Baixar - ${musicTitle}`, icon: 'download', visible: true, disabled: true },
-            { id: 3, label: 'Ver no YouTube', icon: 'logo-youtube', subId: 'video', visible: false, fun: 'videos' },
-            { id: 4, label: 'Ir para cifra', icon: 'open', subId: 'cifra', visible: false, fun: 'ciphers' },
-            { id: 5, label: 'Relatar um problema', icon: 'alert-circle', visible: true, fun: 'help' },
-        ]
-
-        list.forEach((element) => {
-            if (element.subId) {
-                if ([isCipher].includes(element.subId)) {
-                    element.visible = true
-                }
-
-                if ([isVideo].includes(element.subId)) {
-                    element.visible = true
-                }
-            }
-        })
-        setDataList(list);
     };
 
     const goToVideo = () => Linking.openURL(linkVideo);
@@ -311,19 +297,19 @@ export default function Music({ route, navigation }) {
         try {
             let linkShare = `${musicTitle}\n${author}\n\n${musicTxt}`;
 
-            if (typeDevice.Android())
-                linkShare += '\n\n https://play.google.com/store/apps/details?id=br.org.icoc.novacancao';
+            if (typeDevice.Android()) {
+                linkShare += '\n\nhttps://play.google.com/store/apps/details?id=br.org.icoc.novacancao';
+            }
 
             await Share.share({
                 message: linkShare,
                 url: 'https://apple.com/br',
                 title: 'Cante Uma Nova Canção'
             });
-
         } catch (error) {
-            alert(error.message);
+            show('Não foi possível compartilhar a música', { type: 'danger' });
         }
-    }
+    };
 
     const goToCipher = () => {
         navigation.navigate(
@@ -331,109 +317,187 @@ export default function Music({ route, navigation }) {
             {
                 screen: 'MusicCipherInHome',
                 params: {
-                    numMusic: number,
-                    musicTitle: musicTitle,
-                    author: author,
-                    cipher: cipher
+                    numMusic,
+                    musicTitle,
+                    author,
+                    cipher
                 },
             }
-        )
+        );
     };
 
     const submitProblemfound = async () => {
         try {
             const to = 'anthony.silvaoliveira@outlook.com';
             const subject = 'Quero relatar um problema';
-            const body = `Olá, \n\n Vi um erro na música ${musicTitle} do autor ${author}! \n\n\n Relate o problema aqui ...`;
-
-            const query = qs.stringify({
-                subject,
-                body,
-                cc: '',
-                bcc: ''
-            });
-
-            let url = `mailto:${to}?${query}`;
-
+            const body = `Olá, \n\nVi um erro na música ${musicTitle} do autor ${author}! \n\n\nRelate o problema aqui ...`;
+            const query = qs.stringify({ subject, body, cc: '', bcc: '' });
+            const url = `mailto:${to}?${query}`;
             const canOpen = await Linking.canOpenURL(url);
 
             if (!canOpen) {
                 show('Não foi possível abrir o seu app de email', { type: 'danger' });
+                return;
             }
 
             return Linking.openURL(url);
-
         } catch (error) {
             show('Ops! Houve um erro ao abrir o seu app de email', { type: 'danger' });
         }
-    }
+    };
+
+    const downloadCurrentAudio = async () => {
+        if (!audioSource || isDownloading) {
+            return;
+        }
+
+        setIsDownloading(true);
+        show('Baixando áudio...', { type: 'normal' });
+
+        try {
+            player.pause();
+            const localUri = await downloadAudioToDevice(audioSource.path);
+
+            setSourceUri(localUri);
+            setIsDownloaded(true);
+            musicPlayTracker.current.sourceChanged();
+            player.replace(localUri);
+            show('Áudio disponível para ouvir offline', { type: 'success' });
+        } catch (error) {
+            console.error('Não foi possível baixar o áudio:', error);
+            show('Falha ao baixar o áudio. Tente novamente.', { type: 'danger' });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const removeCurrentDownload = () => {
+        if (!audioSource || isDownloading) {
+            return;
+        }
+
+        Alert.alert(
+            'Remover download?',
+            `O áudio de ${musicTitle} voltará a depender da internet.`,
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Remover',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            player.pause();
+                            await removeDownloadedAudio(audioSource.path);
+                            setSourceUri(audioSource.remoteUri);
+                            setIsDownloaded(false);
+                            musicPlayTracker.current.sourceChanged();
+                            player.replace(audioSource.remoteUri);
+                            show('Download removido', { type: 'success' });
+                        } catch (error) {
+                            console.error('Não foi possível remover o download:', error);
+                            show('Não foi possível remover o download', { type: 'danger' });
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const dataList = useMemo(() => {
+        const list = [
+            { id: 1, label: 'Compartilhar', visible: true, icon: 'share', action: sharingMusic },
+            {
+                id: 3,
+                label: 'Ver no YouTube',
+                icon: 'logo-youtube',
+                visible: Boolean(isVideo),
+                action: goToVideo
+            },
+            {
+                id: 4,
+                label: 'Ir para cifra',
+                icon: 'open',
+                visible: Boolean(isCipher),
+                action: goToCipher
+            },
+            {
+                id: 5,
+                label: 'Relatar um problema',
+                icon: 'alert-circle',
+                visible: true,
+                action: submitProblemfound
+            },
+        ];
+
+        if (audioSource) {
+            list.splice(1, 0, {
+                id: 2,
+                label: isDownloading
+                    ? 'Baixando áudio...'
+                    : isDownloaded
+                        ? `Remover download - ${musicTitle}`
+                        : `Baixar - ${musicTitle}`,
+                icon: isDownloaded ? 'trash-outline' : 'download',
+                visible: true,
+                disabled: isDownloading,
+                action: isDownloaded ? removeCurrentDownload : downloadCurrentAudio
+            });
+        }
+
+        return list;
+    }, [
+        audioSource,
+        isCipher,
+        isDownloaded,
+        isDownloading,
+        isVideo,
+        musicTitle
+    ]);
 
     const renderItem = ({ item, separators }) => {
-        const pressed = (param) => {
-            const action = {
-                sharing: () => sharingMusic(),
-                videos: () => goToVideo(),
-                ciphers: () => goToCipher(),
-                help: () => submitProblemfound(),
-            }
-
-            action[param]();
+        if (!item.visible) {
+            return null;
         }
 
         return (
-            <>
-                {
-                    item.visible &&
-                    <View>
-                        <TouchableOpacity
-                            key={item.id}
-                            onPress={() => pressed(item.fun)}
-                            onShowUnderlay={separators.highlight}
-                            onHideUnderlay={separators.unhighlight}
-                            activeOpacity={0.4}
-                            style={{ width: '100%', opacity: item.disabled && 0.5 }}
-                            disabled={item.disabled}
-                        >
-                            <View style={[style.modalButtons]}>
-                                <View style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                }}>
-                                    <Ionicons name={item.icon} size={20} color="#FFF" />
-                                    <Text style={[style.textButton]} numberOfLines={1}>
-                                        {item.label}
-                                    </Text>
-                                </View>
-                                <View style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    alignItems: 'center'
-                                }}>
-                                    {
-                                        item.disabled &&
-                                        <Text style={{ color: themes.dark.colors.primary }}>Em breve!</Text>
-                                    }
-                                    <MaterialIcons name="keyboard-arrow-right" size={20} color={themes.dark.colors.primary + '90'} />
-                                </View>
-                            </View>
-                        </TouchableOpacity >
-                    </View >
-                }
-            </>
-        )
+            <View>
+                <TouchableOpacity
+                    key={item.id}
+                    onPress={item.action}
+                    onShowUnderlay={separators.highlight}
+                    onHideUnderlay={separators.unhighlight}
+                    activeOpacity={0.4}
+                    style={{ width: '100%', opacity: item.disabled ? 0.5 : 1 }}
+                    disabled={item.disabled}
+                >
+                    <View style={[style.modalButtons]}>
+                        <View style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                        }}>
+                            <Ionicons name={item.icon} size={20} color="#FFF" />
+                            <Text style={[style.textButton]} numberOfLines={1}>
+                                {item.label}
+                            </Text>
+                        </View>
+                        <MaterialIcons
+                            name="keyboard-arrow-right"
+                            size={20}
+                            color={themes.dark.colors.primary + '90'}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </View>
+        );
     };
 
-    const renderSeparator = ({ leadingItem, highlighted }) => {
-        return (
-            <>
-                {
-                    leadingItem.visible &&
-                    <View style={[style.separator]} />
-                }
-            </>
-        )
-    };
+    const renderSeparator = ({ leadingItem }) => (
+        leadingItem?.visible ? <View style={[style.separator]} /> : null
+    );
 
     return (
         <Wrapper>
@@ -447,68 +511,56 @@ export default function Music({ route, navigation }) {
 
             <Modalize
                 ref={menuModalRef}
-                onOpen={closeModalMusicAudio}
-                onClose={showModalMusicAudio}
+                onOpen={() => {
+                    setPositionModal('initial');
+                    modalizeRef.current?.close();
+                }}
+                onClose={() => modalizeRef.current?.open()}
                 threshold={50}
-                handlePosition='inside'
+                handlePosition="inside"
                 adjustToContentHeight
-                handleStyle={{
-                    backgroundColor: "#FFFFFF25"
+                handleStyle={{ backgroundColor: '#FFFFFF25' }}
+                modalStyle={{ backgroundColor: themes.dark.colors.card }}
+                flatListProps={{
+                    data: dataList,
+                    renderItem,
+                    ItemSeparatorComponent: renderSeparator,
+                    keyExtractor: item => String(item.id),
                 }}
-                modalStyle={{
-                    backgroundColor: themes.dark.colors.card,
-                }}
-                flatListProps={
-                    {
-                        data: dataList,
-                        renderItem: renderItem,
-                        ItemSeparatorComponent: renderSeparator,
-                        keyExtractor: (item) => item.id,
-                    }
-                }
-            >
-            </Modalize>
+            />
 
-            {(isMounted) &&
+            {audioSource && playerStatus.isLoaded &&
                 <Modalize
                     ref={modalizeRef}
                     alwaysOpen={60}
                     modalHeight={445}
-                    avoidKeyboardLikeIOS={true}
+                    avoidKeyboardLikeIOS
                     velocity={100}
                     threshold={200}
-                    handlePosition='inside'
+                    handlePosition="inside"
                     withHandle={positionModal === 'top'}
                     withOverlay={false}
                     disableScrollIfPossible
                     tapGestureEnabled
                     useNativeDriver
                     onPositionChange={setPositionModal}
-                    scrollViewProps={
-                        {
-                            scrollEnabled: false,
-                            showsVerticalScrollIndicator: false
-                        }
-                    }
-                    modalStyle={
-                        {
-                            backgroundColor: themes.dark.colors.card,
-                            padding: positionModal == 'top' ? 30 : 10,
-                        }
-                    }
-                    handleStyle={
-                        {
-                            backgroundColor: "gray"
-                        }
-                    }
+                    scrollViewProps={{
+                        scrollEnabled: false,
+                        showsVerticalScrollIndicator: false
+                    }}
+                    modalStyle={{
+                        backgroundColor: themes.dark.colors.card,
+                        padding: positionModal === 'top' ? 30 : 10,
+                    }}
+                    handleStyle={{ backgroundColor: 'gray' }}
                     HeaderComponent={
                         positionModal !== 'top' &&
                         <ContainerMiniPlayer>
                             <WarpperMiniPlayer>
                                 <Pressable
                                     onPress={() => {
-                                        setPositionModal('top')
-                                        modalizeRef.current?.open('top')
+                                        setPositionModal('top');
+                                        modalizeRef.current?.open('top');
                                     }}
                                     style={{ width: '85%' }}
                                 >
@@ -528,10 +580,13 @@ export default function Music({ route, navigation }) {
                                     </ContentMusicName>
                                 </Pressable>
                                 <TouchableOpacity onPress={playOrPause} style={style.playOrPause}>
-                                    <FontAwesome5 name={typeIcon} size={20} color='#fff' />
+                                    <FontAwesome5 name={typeIcon} size={20} color="#fff" />
                                 </TouchableOpacity>
                             </WarpperMiniPlayer>
-                            <ProgressBar key={'progresBar'} progress={progress} duration={duration} />
+                            <ProgressBar
+                                currentProgress={progress}
+                                totalDuration={duration}
+                            />
                         </ContainerMiniPlayer>
                     }
                 >
@@ -555,12 +610,12 @@ export default function Music({ route, navigation }) {
                                     <Slider
                                         value={progress}
                                         minimumValue={0}
-                                        maximumValue={duration}
-                                        maximumTrackTintColor='#FFFFFF50'
+                                        maximumValue={duration || 1}
+                                        maximumTrackTintColor="#FFFFFF50"
                                         minimumTrackTintColor={themes.dark.colors.primary}
                                         thumbTintColor={themes.dark.colors.primary}
-                                        onSlidingStart={value => advancedMusic({ status: 'start', value: value })}
-                                        onSlidingComplete={value => advancedMusic({ status: 'completed', value: value })}
+                                        onSlidingStart={value => advancedMusic({ status: 'start', value })}
+                                        onSlidingComplete={value => advancedMusic({ status: 'completed', value })}
                                     />
                                 </View>
 
@@ -571,22 +626,21 @@ export default function Music({ route, navigation }) {
 
                                 <MusicControl>
                                     <TouchableOpacity onPress={backwardButton}>
-                                        <MaterialIcons name="replay-10" size={40} color='#FFF' />
+                                        <MaterialIcons name="replay-10" size={40} color="#FFF" />
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity onPress={playOrPause}
-                                        style={
-                                            [
-                                                style.playAndPause,
-                                                { paddingLeft: typeIcon === 'play' ? 3.5 : 0 }
-                                            ]
-                                        }
+                                    <TouchableOpacity
+                                        onPress={playOrPause}
+                                        style={[
+                                            style.playAndPause,
+                                            { paddingLeft: typeIcon === 'play' ? 3.5 : 0 }
+                                        ]}
                                     >
-                                        <FontAwesome5 name={typeIcon} size={23} color='#fff' />
+                                        <FontAwesome5 name={typeIcon} size={23} color="#fff" />
                                     </TouchableOpacity>
 
                                     <TouchableOpacity onPress={forwardButton}>
-                                        <MaterialIcons name="forward-10" size={40} color='#FFF' />
+                                        <MaterialIcons name="forward-10" size={40} color="#FFF" />
                                     </TouchableOpacity>
                                 </MusicControl>
                             </ProgressConstainer>
