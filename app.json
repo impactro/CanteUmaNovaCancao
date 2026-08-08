@@ -4,7 +4,7 @@
     "slug": "NovaCancao",
     "version": "3.3.50",
     "newArchEnabled": true,
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./src/assets/cunc.png",
     "backgroundColor": "#000000",
     "runtimeVersion": {

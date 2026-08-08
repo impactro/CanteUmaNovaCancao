@@ -1,4 +1,4 @@
-import { Dimensions, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import styled from "styled-components/native";
 import themes from "./themes";
 import { typeDevice } from "../utils";
@@ -109,6 +109,15 @@ export const AuthorMusicMiniPlayer = styled.Text`
 `;
 
 export const style = StyleSheet.create({
+    masterDetail: {
+        flex: 1,
+        flexDirection: 'row',
+        width: '100%'
+    },
+    detailPane: {
+        flex: 1,
+        minWidth: 0
+    },
     playAndPause: {
         backgroundColor: themes.dark.colors.primary,
         borderRadius: 30,
@@ -151,8 +160,8 @@ export const style = StyleSheet.create({
     },
     textButton: {
         color: '#FFF',
+        flexShrink: 1,
         marginLeft: 10,
-        width: Dimensions.get('screen').width - 180
     },
     separator: {
         height: 1,

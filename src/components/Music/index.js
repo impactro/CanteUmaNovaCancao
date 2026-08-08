@@ -8,6 +8,7 @@ import {
     Share,
     Text,
     TouchableOpacity,
+    useWindowDimensions,
     View
 } from 'react-native';
 import { Entypo, Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -51,10 +52,15 @@ import {
 import audioCatalog from '../../service/audioCatalog.cjs';
 import { trackMusicPlay } from '../../service/analytics';
 import musicPlayAnalyticsCore from '../../service/musicPlayAnalyticsCore.cjs';
+import musicScreenLifecycleCore from '../../service/musicScreenLifecycleCore.cjs';
 import qs from 'qs';
 import { SUPPORT_CONTACT_EMAIL } from '../../config/legal';
+import adaptiveLayoutCore from '../../service/adaptiveLayoutCore.cjs';
+import WideMusicCatalog from '../WideMusicCatalog';
 
 export default function Music({ route, navigation }) {
+    const { width } = useWindowDimensions();
+    const adaptiveLayout = adaptiveLayoutCore.getAdaptiveLayout(width);
     const {
         musicTxt,
         audio,
@@ -75,6 +81,9 @@ export default function Music({ route, navigation }) {
     const musicPlayTracker = useRef(
         new musicPlayAnalyticsCore.MusicPlayExecutionTracker()
     );
+    const screenLifecycle = useRef(
+        musicScreenLifecycleCore.createMusicScreenLifecycleGuard()
+    ).current;
     const player = useAudioPlayer(null, { updateInterval: 500 });
     const playerStatus = useAudioPlayerStatus(player);
 
@@ -114,6 +123,7 @@ export default function Music({ route, navigation }) {
 
     useEffect(() => {
         navigation.setOptions({
+            title: musicTitle,
             headerRight: () => (
                 <Pressable
                     onPress={() => menuModalRef.current?.open()}
@@ -127,7 +137,15 @@ export default function Music({ route, navigation }) {
                 </Pressable>
             ),
         });
-    }, [navigation]);
+    }, [musicTitle, navigation]);
+
+    useEffect(() => navigation.addListener('beforeRemove', () => {
+        screenLifecycle.beginLeaving({
+            closeMenu: () => menuModalRef.current?.close(),
+            closePlayer: () => modalizeRef.current?.close(),
+            clearLockScreenControls: () => player.clearLockScreenControls()
+        });
+    }), [navigation, player, screenLifecycle]);
 
     useEffect(() => {
         let active = true;
@@ -147,7 +165,7 @@ export default function Music({ route, navigation }) {
             const localUri = getCachedAudioUri(audioSource.path);
             const nextUri = localUri || audioSource.remoteUri;
 
-            if (!active) {
+            if (!active || !screenLifecycle.isActive()) {
                 return;
             }
 
@@ -164,9 +182,8 @@ export default function Music({ route, navigation }) {
 
         return () => {
             active = false;
-            player.clearLockScreenControls();
         };
-    }, [audioSource, player, show]);
+    }, [audioSource, player, screenLifecycle, show]);
 
     const progress = playerStatus.currentTime || 0;
     const duration = playerStatus.duration || 0;
@@ -500,8 +517,12 @@ export default function Music({ route, navigation }) {
         leadingItem?.visible ? <View style={[style.separator]} /> : null
     );
 
-    return (
-        <Wrapper>
+    const selectMusicInWideLayout = item => {
+        navigation.setParams(adaptiveLayoutCore.toMusicRouteParams(item));
+    };
+
+    const detail = (
+        <View style={style.detailPane}>
             <ScrollView>
                 <Container>
                     <MusicLetter onLongPress={copyText} suppressHighlighting>
@@ -516,12 +537,20 @@ export default function Music({ route, navigation }) {
                     setPositionModal('initial');
                     modalizeRef.current?.close();
                 }}
-                onClose={() => modalizeRef.current?.open()}
+                onClose={() => screenLifecycle.restorePlayerAfterMenuClose(
+                    () => modalizeRef.current?.open()
+                )}
                 threshold={50}
                 handlePosition="inside"
                 adjustToContentHeight
                 handleStyle={{ backgroundColor: '#FFFFFF25' }}
-                modalStyle={{ backgroundColor: themes.dark.colors.card }}
+                modalStyle={{
+                    alignSelf: adaptiveLayout.isWide ? 'flex-end' : undefined,
+                    backgroundColor: themes.dark.colors.card,
+                    width: adaptiveLayout.isWide
+                        ? adaptiveLayout.detailPaneWidth
+                        : undefined
+                }}
                 flatListProps={{
                     data: dataList,
                     renderItem,
@@ -550,8 +579,12 @@ export default function Music({ route, navigation }) {
                         showsVerticalScrollIndicator: false
                     }}
                     modalStyle={{
+                        alignSelf: adaptiveLayout.isWide ? 'flex-end' : undefined,
                         backgroundColor: themes.dark.colors.card,
                         padding: positionModal === 'top' ? 30 : 10,
+                        width: adaptiveLayout.isWide
+                            ? adaptiveLayout.detailPaneWidth
+                            : undefined
                     }}
                     handleStyle={{ backgroundColor: 'gray' }}
                     HeaderComponent={
@@ -649,6 +682,22 @@ export default function Music({ route, navigation }) {
                     }
                 </Modalize>
             }
+        </View>
+    );
+
+    return (
+        <Wrapper>
+            {adaptiveLayout.isWide ? (
+                <View style={style.masterDetail}>
+                    <View style={{ width: adaptiveLayout.masterPaneWidth }}>
+                        <WideMusicCatalog
+                            onSelect={selectMusicInWideLayout}
+                            selectedNumber={numMusic}
+                        />
+                    </View>
+                    {detail}
+                </View>
+            ) : detail}
         </Wrapper>
     );
 }

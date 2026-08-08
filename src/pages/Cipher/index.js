@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, TouchableOpacity, View, VirtualizedList } from 'react-native';
+import { Image, TouchableOpacity, useWindowDimensions, View, VirtualizedList } from 'react-native';
 import { Container, InfoMusic, List, Wrapper } from '../../style/LyricsStyle';
 import { Author, Kids, Title } from '../../../style';
 // import mockMusicData from '../../utils/mockMusicData.json';
@@ -7,8 +7,11 @@ import MusicContext from '../../contexts/music';
 import LoadingIndicator from '../../components/Loading';
 import { formatNameMusic } from '../../utils';
 import { useScrollToTop } from '@react-navigation/native';
+import MusicContentIndicators from '../../components/MusicContentIndicators';
+import musicContentCore from '../../service/musicContentCore.cjs';
 
 export default function Cipher({ navigation }) {
+    const { width } = useWindowDimensions();
     const {
         allCiphers,
         refreshing,
@@ -43,7 +46,7 @@ export default function Cipher({ navigation }) {
         );
     }
 
-    const widthScreen = Dimensions.get('window').width - 10;
+    const widthScreen = Math.max(width - 10, 0);
 
     const data = {
         'sonho': require('../../assets/o_sonho.png'),
@@ -58,6 +61,9 @@ export default function Cipher({ navigation }) {
             onShowUnderlay={separators.highlight}
             onHideUnderlay={separators.unhighlight}
             activeOpacity={0.4}
+            accessibilityRole="button"
+            accessibilityLabel={`Abrir ${formatNameMusic(item)}. ${musicContentCore.getAccessibilityLabel(item.music)}`}
+            accessibilityHint="Abre a cifra da música"
         >
             <Wrapper>
                 <List>
@@ -66,11 +72,12 @@ export default function Cipher({ navigation }) {
                         style={{ width: 45, height: 45, borderRadius: 8, marginRight: 10 }}
                     />
                     <InfoMusic width={widthScreen}>
-                        <View>
+                        <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
                             <Title numberOfLines={1}>{formatNameMusic(item)}</Title>
                             <Author numberOfLines={1}>{item.author}</Author>
                         </View>
-                        <View>
+                        <View style={{ alignItems: 'flex-end', gap: 3 }}>
+                            <MusicContentIndicators music={item.music} />
                             {item.kids && <Kids>kids</Kids>}
                             {item.natal && <Kids>Natal</Kids>}
                         </View>

@@ -81,6 +81,24 @@ sempre maior que qualquer pacote já carregado no Google Play.
 - usar ícones legíveis, rótulos de acessibilidade e uma legenda discreta;
 - manter a lista clara também em telas pequenas.
 
+### UX-002 — Layout adaptativo para tablets e rotação
+
+- tipo: melhoria funcional;
+- prioridade: `P2`;
+- estado: `Planejado`;
+- liberar retrato e paisagem, preservando o estado da navegação e da música
+  durante a rotação;
+- em telas grandes, usar composição mestre–detalhe: catálogo ou navegação na
+  lateral e a música selecionada em uma área principal maior;
+- em telefones, manter a navegação compacta atual, sem reduzir a área útil;
+- evitar dimensões fixas por modelo e decidir o layout pela largura disponível;
+- aceite:
+  - alternar retrato e paisagem sem tela preta, crash, ANR ou perda indevida do
+    ponto de navegação;
+  - abrir, tocar e voltar entre músicas no layout lateral;
+  - manter letra, cifra, áudio e ações acessíveis nas duas orientações;
+  - validar no E19 e em pelo menos um telefone ou AVD.
+
 ### BRAND-001 — Splash mínimo da CrânIA
 
 - tipo: identidade visual;
@@ -132,26 +150,18 @@ sempre maior que qualquer pacote já carregado no Google Play.
 1. reproduzir, diagnosticar e corrigir `BUG-001`;
 2. executar a regressão mínima de navegação em telefone e tablet;
 3. implementar `UX-001`, com indicadores do conteúdo de cada música;
-4. implementar `BRAND-001` e `BRAND-002` com os ativos aprovados;
-5. revisar os textos visíveis conforme `LEGAL-001`, sem alterar créditos de
+4. implementar `UX-002`, com rotação e composição mestre–detalhe em tablets;
+5. implementar `BRAND-001` e `BRAND-002` com os ativos aprovados;
+6. revisar os textos visíveis conforme `LEGAL-001`, sem alterar créditos de
    autoria de músicas;
-6. executar os gates locais, gerar APK e validar em aparelho físico;
-7. gerar AAB, publicar primeiro em teste interno e acompanhar estabilidade;
-8. atualizar este roadmap e as notas da versão com o resultado real.
+7. executar os gates locais, gerar APK e validar em aparelho físico;
+8. gerar AAB, publicar primeiro em teste interno e acompanhar estabilidade;
+9. atualizar este roadmap e as notas da versão com o resultado real.
 
 Se surgir um novo bug durante o ciclo, ele volta ao início da fila para
 triagem antes da continuidade das funcionalidades.
 
 ## Evolução aprovada, sem prioridade imediata
-
-### UX-002 — Repensar o layout para tablets
-
-- prioridade: `P3`;
-- estado: `Aprovado`;
-- redesenhar hierarquia, largura de conteúdo, navegação e uso de espaço para
-  telas grandes;
-- evitar apenas esticar o layout de telefone;
-- executar depois da estabilização funcional.
 
 ### UX-003 — Repaginação visual e temas
 

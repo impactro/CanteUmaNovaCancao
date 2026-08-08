@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, Image, TouchableOpacity, View, VirtualizedList } from 'react-native';
+import { Image, TouchableOpacity, useWindowDimensions, View, VirtualizedList } from 'react-native';
 import { Container, InfoMusic, List, Wrapper } from '../../style/LyricsStyle';
 import { Author, Kids, Title } from '../../../style';
 import Filter from '../../components/Filter';
@@ -8,8 +8,11 @@ import MusicContext from '../../contexts/music';
 import LoadingIndicator from '../../components/Loading';
 import { formatNameMusic } from '../../utils';
 import { useScrollToTop } from '@react-navigation/native';
+import MusicContentIndicators, { MusicContentLegend } from '../../components/MusicContentIndicators';
+import musicContentCore from '../../service/musicContentCore.cjs';
 
 export default function Lyrics({ navigation }) {
+    const { width } = useWindowDimensions();
     const {
         allMusics,
         refreshing,
@@ -25,7 +28,7 @@ export default function Lyrics({ navigation }) {
         { title: 'Natal', type: 'natal', selected: false },
     ];
 
-    const widthScreen = Dimensions.get('window').width - 10;
+    const widthScreen = Math.max(width - 10, 0);
     const listRef = useRef(null);
 
     const [newOrder, setNewOrder] = useState('all');
@@ -139,6 +142,9 @@ export default function Lyrics({ navigation }) {
             onShowUnderlay={separators.highlight}
             onHideUnderlay={separators.unhighlight}
             activeOpacity={0.4}
+            accessibilityRole="button"
+            accessibilityLabel={`Abrir ${formatNameMusic(item)}. ${musicContentCore.getAccessibilityLabel(item.music)}`}
+            accessibilityHint="Abre os detalhes da música"
         >
             <Wrapper>
                 <List>
@@ -147,11 +153,12 @@ export default function Lyrics({ navigation }) {
                         style={{ width: 45, height: 45, borderRadius: 8, marginRight: 10 }}
                     />
                     <InfoMusic width={widthScreen}>
-                        <View style={{ width: (item.kids || item.natal) ? '80%' : '100%' }}>
+                        <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
                             <Title numberOfLines={1}>{formatNameMusic(item)}</Title>
                             <Author numberOfLines={1}>{item.author}</Author>
                         </View>
-                        <View>
+                        <View style={{ alignItems: 'flex-end', gap: 3 }}>
+                            <MusicContentIndicators music={item.music} />
                             {item.kids && <Kids>Kids</Kids>}
                             {item.natal && <Kids>Natal</Kids>}
                         </View>
@@ -168,7 +175,10 @@ export default function Lyrics({ navigation }) {
     }
 
     const filter = useCallback(() => (
-        <Filter listHandler={changeOrder} filterOrder={filterOrder} />
+        <>
+            <Filter listHandler={changeOrder} filterOrder={filterOrder} />
+            <MusicContentLegend />
+        </>
     ), [filterOrder]);
 
     const onRefresh = useCallback(async () => {

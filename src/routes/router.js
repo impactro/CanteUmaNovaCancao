@@ -6,11 +6,11 @@ import About from '../pages/About';
 import Music from '../components/Music';
 import themes from '../style/themes';
 import MusicCipher from '../components/MusicCipher';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { ThemeProvider } from 'styled-components/native';
-import { Dimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { typeDevice } from '../utils';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,8 @@ import TermsOfUse from '../components/TermsOfUse';
 import PrivacyPolicy from '../components/PrivacyPolicy';
 import SpecialPage from '../components/SpecialPage';
 import { trackScreenRoute } from '../service/analytics';
+import adaptiveLayoutCore from '../service/adaptiveLayoutCore.cjs';
+import WideNavigationRail from '../components/WideNavigationRail';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -59,7 +61,8 @@ function AboutScreen({ navigation }) {
 }
 
 function HomeStackMusic({ route }) {
-    const widthScreen = Dimensions.get('window').width - 100;
+    const { width } = useWindowDimensions();
+    const widthScreen = Math.max(width - 100, 0);
 
     return (
         <Stack.Navigator screenOptions={{ headerShown: true }}>
@@ -104,7 +107,8 @@ function HomeStackMusic({ route }) {
 }
 
 function SearchScreenStack({ route }) {
-    const widthScreen = Dimensions.get('window').width - 100;
+    const { width } = useWindowDimensions();
+    const widthScreen = Math.max(width - 100, 0);
 
     return (
         <Stack.Navigator screenOptions={{ headerShown: true }}>
@@ -139,7 +143,8 @@ function SearchScreenStack({ route }) {
 }
 
 function CipherScreenStack({ route }) {
-    const widthScreen = Dimensions.get('window').width - 100;
+    const { width } = useWindowDimensions();
+    const widthScreen = Math.max(width - 100, 0);
 
     return (
         <Stack.Navigator screenOptions={{ headerShown: true }}>
@@ -227,6 +232,8 @@ function AboutScreenStack({ route }) {
 }
 
 export default function Router() {
+    const { width, height } = useWindowDimensions();
+    const adaptiveLayout = adaptiveLayoutCore.getAdaptiveLayout(width);
     const navigationRef = useRef(null);
     const routeNameRef = useRef(null);
     const {
@@ -257,8 +264,8 @@ export default function Router() {
         }
     };
 
-    if (Dimensions.get('window').height < 600) {
-        heightScreen = Dimensions.get('window').height - 510;
+    if (!adaptiveLayout.isWide && height < 600) {
+        heightScreen = Math.max(height - 510, 52);
     }
 
     if (typeDevice.Android()) {
@@ -277,7 +284,14 @@ export default function Router() {
             >
                 <Tab.Navigator
                     backBehavior='history'
-                    sceneContainerStyle={{ backgroundColor: themes.dark.background }}
+                    tabBar={props => adaptiveLayout.isWide
+                        ? <WideNavigationRail {...props} />
+                        : <BottomTabBar {...props} />
+                    }
+                    sceneContainerStyle={{
+                        backgroundColor: themes.dark.background,
+                        marginLeft: adaptiveLayout.navigationRailWidth
+                    }}
                     screenOptions={({ route }) => ({
                         tabBarHideOnKeyboard: typeDevice.Android(),
                         tabBarLabelPosition: 'below-icon',

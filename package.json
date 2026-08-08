@@ -29,6 +29,9 @@
     "test:offline-audio": "node scripts/check-offline-audio.cjs",
     "test:audio-cache": "node scripts/test-audio-cache-behavior.cjs",
     "test:music-play": "node scripts/test-music-play-analytics.cjs",
+    "test:music-screen-lifecycle": "node scripts/test-music-screen-lifecycle.cjs",
+    "test:music-content": "node scripts/test-music-content.cjs",
+    "test:adaptive-layout": "node scripts/test-adaptive-layout.cjs",
     "test:minimal-analytics": "node scripts/check-minimal-analytics.cjs",
     "test:firebase-gate": "node scripts/test-firebase-config-gate.cjs",
     "test:android-release-signing": "node scripts/test-android-release-signing.cjs",
@@ -36,7 +39,7 @@
     "test:android-manifest": "node scripts/check-android-privacy-manifest.cjs",
     "test:search": "node scripts/test-music-search.cjs",
     "test:search-history": "node scripts/test-search-history.cjs",
-    "test:ci": "npm run test:native-bootstrap && npm run test:offline-audio && npm run test:audio-cache && npm run test:music-play && npm run test:minimal-analytics && npm run test:firebase-gate && npm run test:android-release-signing && npm run test:search && npm run test:search-history && npm run test:android-manifest -- --allow-missing",
+    "test:ci": "npm run test:native-bootstrap && npm run test:offline-audio && npm run test:audio-cache && npm run test:music-play && npm run test:music-screen-lifecycle && npm run test:music-content && npm run test:adaptive-layout && npm run test:minimal-analytics && npm run test:firebase-gate && npm run test:android-release-signing && npm run test:search && npm run test:search-history && npm run test:android-manifest -- --allow-missing",
     "ci:check": "npm run doctor && npm run test:ci",
     "dependencies-in-use": "npx depcheck",
     "dependecies-in-use": "npm run dependencies-in-use"

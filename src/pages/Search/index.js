@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, FlatList, TouchableOpacity, Image, Dimensions, Keyboard, TouchableWithoutFeedback, Text, Pressable } from "react-native";
+import { View, FlatList, TouchableOpacity, Image, Keyboard, TouchableWithoutFeedback, Text, Pressable, useWindowDimensions } from "react-native";
 import { Container, ListView, SearchButton, SearchInput, styles } from "../../style/SearchStyle";
 import { Author, ButtonTitle, Kids, Title } from "../../../style";
 import { InfoMusic, List } from "../../style/LyricsStyle";
@@ -11,8 +11,11 @@ import { AntDesign } from '@expo/vector-icons';
 import RecentSearches from "../../components/RecentSearches";
 import SearchesContext from "../../contexts/search";
 import musicSearchCore from '../../service/musicSearchCore.cjs';
+import MusicContentIndicators from '../../components/MusicContentIndicators';
+import musicContentCore from '../../service/musicContentCore.cjs';
 
 export default function Search({ navigation }) {
+    const { width } = useWindowDimensions();
     const { show } = useToast();
 
     const {
@@ -31,7 +34,7 @@ export default function Search({ navigation }) {
         'undefined': require('../../assets/cunc.png')
     }
 
-    const widthScreen = Dimensions.get('window').width - 15;
+    const widthScreen = Math.max(width - 15, 0);
 
     const [textValue, setTextValue] = useState('');
     const [dataMusic, setDataMusic] = useState([]);
@@ -64,8 +67,8 @@ export default function Search({ navigation }) {
 
     const findMusics = (value) => musicSearchCore.searchMusics(allMusics, value);
 
-    const gotToMusicText = ({ number, title, music, author }) => {
-        const { text, audio } = music;
+    const gotToMusicText = ({ number, title, music, author, album }) => {
+        const { text, audio, cifra, video } = music;
         navigation.navigate(
             'Search',
             {
@@ -75,7 +78,12 @@ export default function Search({ navigation }) {
                     musicTxt: text,
                     musicTitle: title,
                     audio: audio,
-                    author: author
+                    author: author,
+                    image: album,
+                    isCipher: cifra && 'cifra',
+                    isVideo: video && 'video',
+                    cipher: cifra,
+                    linkVideo: video
                 }
             }
         );
@@ -88,6 +96,9 @@ export default function Search({ navigation }) {
             onShowUnderlay={separators.highlight}
             onHideUnderlay={separators.unhighlight}
             activeOpacity={0.4}
+            accessibilityRole="button"
+            accessibilityLabel={`Abrir ${formatNameMusic(item)}. ${musicContentCore.getAccessibilityLabel(item.music)}`}
+            accessibilityHint="Abre os detalhes da música"
         >
             <List width={widthScreen}>
                 <Image
@@ -95,11 +106,12 @@ export default function Search({ navigation }) {
                     style={{ width: 45, height: 45, borderRadius: 8, marginRight: 10 }}
                 />
                 <InfoMusic width={widthScreen}>
-                    <View>
-                        <Title>{formatNameMusic(item)}</Title>
-                        <Author>{item.author}</Author>
+                    <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                        <Title numberOfLines={1}>{formatNameMusic(item)}</Title>
+                        <Author numberOfLines={1}>{item.author}</Author>
                     </View>
-                    <View>
+                    <View style={{ alignItems: 'flex-end', gap: 3 }}>
+                        <MusicContentIndicators music={item.music} />
                         {item.kids && <Kids>Kids</Kids>}
                         {item.natal && <Kids>Natal</Kids>}
                     </View>
