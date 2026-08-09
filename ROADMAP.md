@@ -128,7 +128,12 @@ sempre maior que qualquer pacote já carregado no Google Play.
 
 - tipo: conteúdo e identidade;
 - prioridade: `P2`;
-- estado: `Planejado`;
+- estado: `Em desenvolvimento`;
+- implementação atual: tela identifica CrânIA EcoSystem, Fábio Souza,
+  versão instalada e site oficial clicável; o contato permanece sem expor
+  o e-mail na interface, os créditos históricos foram preservados e a tela
+  agora usa layout responsivo, cartões legíveis e ações acessíveis de 48 dp;
+- pendência: validar leitura, link e acessibilidade em telefone e tablet;
 - apresentar “Redesenvolvido por CrânIA EcoSystem”;
 - apresentar “Mantido por Fábio Souza”;
 - mostrar a versão instalada do aplicativo;
@@ -160,6 +165,24 @@ sempre maior que qualquer pacote já carregado no Google Play.
   remoção das APIs atuais;
 - executar somente depois de estabilizar o BUG-001.
 
+### SEC-001 — Atualizar a cadeia Expo com segurança
+
+- tipo: segurança e manutenção;
+- prioridade: `P2`;
+- estado: `Em desenvolvimento`;
+- implementação atual: `npm audit fix`, sem `--force`, atualizou transitivas
+  compatíveis e reduziu o relatório de `29` para `25` ocorrências, removendo
+  quatro vulnerabilidades altas sem mudar dependências diretas;
+- pendência: migrar Expo 54/React Native 0.81 para uma combinação suportada que
+  corrija `image-size`, `postcss` e `uuid`, em ciclo isolado com matriz completa
+  de regressão; o autofix destrutivo para Expo 57 não deve ser aplicado direto
+  na candidata atual;
+- aceite:
+  - preservar package, versão, Firebase, áudio, cache e navegação;
+  - passar Expo Doctor, testes, bundle, prebuild e build Android;
+  - revisar cada ocorrência restante pelo contexto de runtime e build;
+  - não usar `npm audit fix --force` sem plano de migração e rollback.
+
 ### Ordem proposta para o ciclo
 
 1. reproduzir, diagnosticar e corrigir `BUG-001`;
@@ -181,7 +204,14 @@ triagem antes da continuidade das funcionalidades.
 ### UX-003 — Repaginação visual e temas
 
 - prioridade: `P3`;
-- estado: `Aprovado`;
+- estado: `Em desenvolvimento`;
+- implementação atual: a tela Sobre deixou de apresentar vínculo institucional
+  atual, ganhou composição responsiva e botões consistentes; o filtro do
+  catálogo usa somente `ICI`, estado imutável, chave estável, área de toque de
+  44 dp e seleção anunciada por acessibilidade; autoria e página histórica
+  permanecem intactas;
+- pendência: validar os textos em aparelho e definir o contrato de metadados
+  antes de incorporar novos catálogos;
 - revisar identidade, tipografia, cores, componentes e iconografia;
 - transformar a base de temas existente em escolha consistente de aparência;
 - considerar tema claro, escuro e acompanhamento do sistema;
@@ -227,7 +257,11 @@ triagem antes da continuidade das funcionalidades.
 ### LEGAL-001 — Neutralizar referências denominacionais
 
 - prioridade: `P2`;
-- estado: `Aprovado`;
+- estado: `Em desenvolvimento`;
+- implementação atual: o filtro da interface usa `ICI`, a tela Sobre não
+  apresenta vínculo institucional atual e autoria/créditos históricos não
+  foram alterados;
+- pendência: validação editorial e visual em aparelho antes de fechar o item;
 - retirar da interface mantida pelo aplicativo o nome completo “Igreja de
   Cristo Internacional”;
 - usar `ICI` somente quando necessário para referência histórica ou origem de

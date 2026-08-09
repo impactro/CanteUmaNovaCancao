@@ -1,6 +1,6 @@
-import React from "react";
-import { Image, Linking, Pressable, ScrollView, Share, View } from "react-native";
-import { AboutButton, Container, Description, VersionApp, Wrapper } from "../../style/AboutStyle";
+import React, { useRef } from "react";
+import { Linking, Pressable, ScrollView, Share } from "react-native";
+import { AboutButton, Actions, BrandImage, Container, Description, VersionApp, Wrapper } from "../../style/AboutStyle";
 import { OsDevice, typeDevice } from "../../utils";
 import { B, ButtonTitle } from "../../../style";
 import appInfo from "../../../app.json";
@@ -12,7 +12,7 @@ import { APP_MAINTAINER_NAME, SUPPORT_CONTACT_EMAIL } from '../../config/legal';
 
 export default function About({ navigation }) {
     const { show } = useToast();
-    let counter = 0;
+    const specialPageCounter = useRef(0);
 
     const share = async () => {
         try {
@@ -45,15 +45,15 @@ export default function About({ navigation }) {
     }
 
     const goToWebsite = async () => {
-        await WebBrowser.openBrowserAsync('https://www.icisp.org.br/');
+        await WebBrowser.openBrowserAsync('https://crania.ia.br/');
     }
 
     const goToSpecialPage = async () => {
-        counter++;
+        specialPageCounter.current += 1;
 
-        if (counter >= 10) {
+        if (specialPageCounter.current >= 10) {
             navigation.navigate('SpecialPage');
-            counter = 0;
+            specialPageCounter.current = 0;
         }
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -90,99 +90,59 @@ export default function About({ navigation }) {
         }
     }
 
+    const actions = [
+        { title: 'Compartilhe', onPress: share, hint: 'Abre as opções de compartilhamento' },
+        { title: 'Conheça a CrânIA', onPress: goToWebsite, hint: 'Abre o site da CrânIA' },
+        { title: 'Contato', onPress: sendEmail, hint: 'Abre seu aplicativo de email' },
+        { title: 'Termos de Uso', onPress: () => goTo('TermsOfUse'), hint: 'Abre os termos de uso' },
+        { title: 'Políticas de Privacidade', onPress: () => goTo('PrivacyPolicy'), hint: 'Abre a política de privacidade' },
+    ];
+
     return (
         <Container>
-            <ScrollView>
+            <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
                 <Wrapper>
-                    <Image
-                        style={{ width: 200, height: 200 }}
+                    <BrandImage
                         source={require('../../assets/top_logo.png')}
+                        resizeMode="contain"
+                        accessible
+                        accessibilityLabel="Cante Uma Nova Canção"
                     />
                     <Description>
                         Seja bem-vindo ao app Cante Uma Nova Canção.{"\n\n"}
                         Estamos muito felizes em ter você por aqui para adorarmos juntos o nosso Deus 😊 {"\n\n"}
-                        Esperamos que tenha uma ótima experiência com nosso app! E para que possamos continuar melhorando e evoluindo contamos com seu feedback!
+                        Redesenvolvido por CrânIA EcoSystem e mantido por Fábio Souza, o aplicativo preserva sua história enquanto continua evoluindo. Esperamos que você tenha uma ótima experiência e contamos com seu feedback!
                     </Description>
 
-                    <View>
-                        <AboutButton style={
-                            ({ pressed }) => [
-                                {
-                                    backgroundColor: pressed
-                                        ? '#24b1ec'
-                                        : '#0B97D3'
-                                }
-                            ]
-                        }
-                            onPress={() => share()}
-                        >
-                            <ButtonTitle>Compartilhe</ButtonTitle>
-                        </AboutButton>
+                    <Actions>
+                        {actions.map(action => (
+                            <AboutButton
+                                key={action.title}
+                                onPress={action.onPress}
+                                accessibilityRole="button"
+                                accessibilityLabel={action.title}
+                                accessibilityHint={action.hint}
+                                style={({ pressed }) => ({
+                                    opacity: pressed ? 0.78 : 1,
+                                    transform: [{ scale: pressed ? 0.99 : 1 }],
+                                })}
+                            >
+                                <ButtonTitle>{action.title}</ButtonTitle>
+                            </AboutButton>
+                        ))}
+                    </Actions>
 
-                        <AboutButton style={
-                            ({ pressed }) => [
-                                {
-                                    backgroundColor: pressed
-                                        ? '#24b1ec'
-                                        : '#0B97D3'
-                                }
-                            ]
-                        }
-                            onPress={() => goToWebsite()}
-                        >
-                            <ButtonTitle>Visite nossa Igreja</ButtonTitle>
-                        </AboutButton>
-
-                        <AboutButton style={
-                            ({ pressed }) => [
-                                {
-                                    backgroundColor: pressed
-                                        ? '#24b1ec'
-                                        : '#0B97D3'
-                                }
-                            ]
-                        } onPress={() => sendEmail()}>
-                            <ButtonTitle>Contato</ButtonTitle>
-                        </AboutButton>
-
-                        <AboutButton style={
-                            ({ pressed }) => [
-                                {
-                                    backgroundColor: pressed
-                                        ? '#24b1ec'
-                                        : '#0B97D3'
-                                }
-                            ]
-                        } onPress={() => goTo('TermsOfUse')}>
-                            <ButtonTitle>Termos de Uso</ButtonTitle>
-                        </AboutButton>
-                        <AboutButton style={
-                            ({ pressed }) => [
-                                {
-                                    backgroundColor: pressed
-                                        ? '#24b1ec'
-                                        : '#0B97D3'
-                                }
-                            ]
-                        } onPress={() => goTo('PrivacyPolicy')}>
-                            <ButtonTitle>Políticas de Privacidade</ButtonTitle>
-                        </AboutButton>
-                    </View>
-
-                    <Pressable onLongPress={() => goToSpecialPage()}
-                        style={
-                            ({ pressed }) => [
-                                {
-                                    backgroundColor: pressed &&
-                                        '#00000000'
-                                }
-                            ]
-                        }
+                    <Pressable
+                        onLongPress={goToSpecialPage}
+                        accessibilityRole="text"
+                        accessibilityLabel={`Versão ${appInfo.expo.version}. Redesenvolvido por CrânIA EcoSystem. Mantido por ${APP_MAINTAINER_NAME}.`}
                     >
                         <VersionApp>
                             Versão: <B>{appInfo.expo.version}</B> {"\n"}
                             OS: <B>{OsDevice()}</B>{"\n"}
-                            Manutenção: <B>{APP_MAINTAINER_NAME}</B>
+                            Redesenvolvido por: <B>CrânIA EcoSystem</B>{"\n"}
+                            Mantido por: <B>{APP_MAINTAINER_NAME}</B>{"\n"}
+                            Site: <B>crania.ia.br</B>
                             {/* <Text style={{fontSize: 30}}>🎧</Text> */}
                         </VersionApp>
                     </Pressable>

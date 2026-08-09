@@ -6,24 +6,45 @@ export const Container = styled.View`
 `;
 
 export const Wrapper = styled.View`
-    flex: 1;
     align-items: center;
-    padding: 10px;
-    min-width: 100%;
+    align-self: center;
+    width: 100%;
+    max-width: 680px;
+    padding: 24px 20px 36px;
+`;
+
+export const BrandImage = styled.Image`
+    width: 176px;
+    height: 176px;
+    margin-bottom: 8px;
 `;
 
 export const Description = styled.Text`
-    margin-bottom: 30px;
-    text-align: justify;
-    padding: 25px;
+    width: 100%;
+    margin-bottom: 24px;
+    text-align: left;
+    padding: 20px;
+    font-size: 16px;
+    line-height: 24px;
     color: ${props => props.theme.color};
+    background-color: ${props => props.theme.modalColor};
+    border-radius: 20px;
+`;
+
+export const Actions = styled.View`
+    width: 100%;
+    max-width: 420px;
 `;
 
 export const AboutButton = styled.Pressable`
-    border-radius: 20px;
-    padding: 10px;
-    width: 160px;
-    margin-bottom: 10px;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    padding: 12px 20px;
+    margin-bottom: 12px;
+    background-color: ${props => props.theme.colors.primary};
 `;
 
 export const ContainerModal = styled.View`
@@ -57,16 +78,13 @@ export const ModalContent = styled.View`
 `;
 
 export const VersionApp = styled.Text`
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    justify-content: center;
+    width: 100%;
     color: #ffff;
     text-align: center;
-    padding: 20px;
-    margin-top: 60px;
+    line-height: 21px;
+    padding: 18px;
+    margin-top: 36px;
     background-color: #3B3B3B;
-    border-radius: 20px;
+    border-radius: 16px;
     overflow: hidden;
-
 `;

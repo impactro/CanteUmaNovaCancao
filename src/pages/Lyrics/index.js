@@ -11,6 +11,14 @@ import { useScrollToTop } from '@react-navigation/native';
 import MusicContentIndicators, { MusicContentLegend } from '../../components/MusicContentIndicators';
 import musicContentCore from '../../service/musicContentCore.cjs';
 
+const FILTERS = [
+    { title: 'Todos', type: 'all' },
+    { title: 'ICI', type: 'ICI' },
+    { title: 'Coração Audaz', type: 'audaz' },
+    { title: 'Kids', type: 'kids' },
+    { title: 'Natal', type: 'natal' },
+];
+
 export default function Lyrics({ navigation }) {
     const { width } = useWindowDimensions();
     const {
@@ -20,19 +28,10 @@ export default function Lyrics({ navigation }) {
         getMusics,
     } = useContext(MusicContext);
 
-    const filters = [
-        { title: 'Todos', type: 'all', selected: true },
-        { title: 'Igreja de Cristo Internacional', type: 'ICI', selected: false },
-        { title: 'Coração Audaz', type: 'audaz', selected: false },
-        { title: 'Kids', type: 'kids', selected: false },
-        { title: 'Natal', type: 'natal', selected: false },
-    ];
-
     const widthScreen = Math.max(width - 10, 0);
     const listRef = useRef(null);
 
     const [newOrder, setNewOrder] = useState('all');
-    const [filterOrder] = useState(filters);
     const [music, setMusic] = useState({});
     const [refreshingManually, setRefreshingManually] = useState(false);
 
@@ -78,14 +77,15 @@ export default function Lyrics({ navigation }) {
 
     const changeOrder = useCallback((order) => {
         setNewOrder(order.type);
-        filterOrder.forEach((element) => {
-            if (element.type === order.type) {
-                element.selected = !element.selected
-            } else {
-                element.selected = false;
-            }
-        });
-    }, [filterOrder])
+    }, [])
+
+    const filterOrder = useMemo(
+        () => FILTERS.map(filterItem => ({
+            ...filterItem,
+            selected: filterItem.type === newOrder,
+        })),
+        [newOrder]
+    );
 
     const orderList = (params) => {
         if (!allMusics.length) return;
@@ -179,7 +179,7 @@ export default function Lyrics({ navigation }) {
             <Filter listHandler={changeOrder} filterOrder={filterOrder} />
             <MusicContentLegend />
         </>
-    ), [filterOrder]);
+    ), [changeOrder, filterOrder]);
 
     const onRefresh = useCallback(async () => {
         setRefreshingManually(true);

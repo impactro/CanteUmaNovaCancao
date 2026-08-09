@@ -9,16 +9,20 @@ export const FilterContainer = styled.View`
     justify-content: center;
 `;
 
-export const Wrapper = styled.View`
+export const FilterButton = styled.Pressable`
+    min-height: 44px;
+    min-width: 56px;
+    align-items: center;
+    justify-content: center;
     background-color: #1A1A1A3A;
-    border-radius: 20px;
-    padding: 10px 20px;
+    border-radius: 22px;
+    padding: 10px 18px;
     margin-horizontal: 4px;
 
     ${props =>
         props.selected && css`
             background-color: ${props => props.theme.colors.primary};
-            border-radius: 30px;
+            border-radius: 22px;
         `
     }
 `;

@@ -1,15 +1,15 @@
 import React, { useRef } from 'react';
-import { FlatList, TouchableOpacity } from 'react-native';
-import { Container, FilterContainer, TextButton, Wrapper } from '../../style/FilterStyle';
+import { FlatList } from 'react-native';
+import { Container, FilterButton, FilterContainer, TextButton } from '../../style/FilterStyle';
 
 export default function Filter({ listHandler, filterOrder }) {
-    const flatListRef = useRef(FlatList);
+    const flatListRef = useRef(null);
 
     const renderItem = ({ item, separators, index }) => {
         const pressed = () => {
             listHandler(item);
 
-            flatListRef.current.scrollToIndex({
+            flatListRef.current?.scrollToIndex({
                 animated: true,
                 index: index,
                 viewOffset: 1,
@@ -18,19 +18,19 @@ export default function Filter({ listHandler, filterOrder }) {
         }
 
         return <FilterContainer>
-            <TouchableOpacity
-                key={item.title}
-                onPress={() => pressed()}
-                onShowUnderlay={separators.highlight}
-                onHideUnderlay={separators.unhighlight}
-                activeOpacity={0.4}
+            <FilterButton
+                selected={item.selected}
+                onPress={pressed}
+                accessibilityRole="button"
+                accessibilityLabel={`Filtrar por ${item.title}`}
+                accessibilityState={{ selected: item.selected }}
+                hitSlop={4}
+                style={({ pressed: isPressed }) => ({ opacity: isPressed ? 0.72 : 1 })}
             >
-                <Wrapper selected={item.selected}>
-                    <TextButton selected={item.selected}>
-                        {item.title}
-                    </TextButton>
-                </Wrapper>
-            </TouchableOpacity>
+                <TextButton selected={item.selected}>
+                    {item.title}
+                </TextButton>
+            </FilterButton>
         </FilterContainer>
     }
 
@@ -39,10 +39,17 @@ export default function Filter({ listHandler, filterOrder }) {
             <FlatList
                 ref={flatListRef}
                 data={filterOrder}
-                horizontal={true}
+                horizontal
                 renderItem={renderItem}
-                keyExtractor={(item, index) => item + index}
+                keyExtractor={item => item.type}
                 showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 2 }}
+                onScrollToIndexFailed={({ index }) => {
+                    flatListRef.current?.scrollToOffset({
+                        animated: true,
+                        offset: Math.max(index * 72, 0),
+                    });
+                }}
             />
         </Container>
     );
