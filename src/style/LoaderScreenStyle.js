@@ -2,7 +2,13 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
     container: {
+        flex: 1,
         alignItems: 'center',
-        backgroundColor: '#0B97D3'
+        justifyContent: 'center',
+        backgroundColor: '#FFFFFF',
+    },
+    image: {
+        width: '72%',
+        height: '42%',
     },
 });

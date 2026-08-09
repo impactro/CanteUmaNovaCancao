@@ -59,10 +59,13 @@ sempre maior que qualquer pacote já carregado no Google Play.
 
 - tipo: bug;
 - prioridade: `P1`;
-- estado: `Relatado`;
+- estado: `Em desenvolvimento`;
 - origem: teste em tablet físico;
 - sintoma: em algumas tentativas, ao voltar para a lista de músicas, a tela
   fica preta e o aplicativo deixa de responder;
+- implementação atual: proteção de ciclo de vida da tela e do player adicionada
+  ao retorno da música; teste automatizado focado aprovado;
+- pendência: repetir o fluxo corrigido no E19 e em um telefone ou AVD;
 - aceite:
   - identificar e registrar a causa;
   - repetir abertura e retorno de músicas sem tela preta, crash ou ANR;
@@ -74,7 +77,10 @@ sempre maior que qualquer pacote já carregado no Google Play.
 
 - tipo: melhoria funcional;
 - prioridade: `P2`;
-- estado: `Planejado`;
+- estado: `Em desenvolvimento`;
+- implementação atual: indicadores de áudio, letra, cifra e link integrados às
+  listas e ao catálogo lateral; teste automatizado focado aprovado;
+- pendência: validação visual e de acessibilidade em telefone e tablet;
 - mostrar, sem abrir a música, quais conteúdos estão disponíveis;
 - prever indicadores para áudio, letra, cifra e link, sem exibir um recurso que
   não exista naquele item;
@@ -85,7 +91,11 @@ sempre maior que qualquer pacote já carregado no Google Play.
 
 - tipo: melhoria funcional;
 - prioridade: `P2`;
-- estado: `Planejado`;
+- estado: `Em desenvolvimento`;
+- implementação atual: rotação liberada, breakpoint adaptativo em `700 dp`,
+  navegação lateral em telas largas e composição mestre–detalhe na música;
+- pendência: validar navegação, rotação e reprodução no E19 e em um telefone ou
+  AVD antes de considerar a melhoria validada;
 - liberar retrato e paisagem, preservando o estado da navegação e da música
   durante a rotação;
 - em telas grandes, usar composição mestre–detalhe: catálogo ou navegação na
@@ -103,11 +113,16 @@ sempre maior que qualquer pacote já carregado no Google Play.
 
 - tipo: identidade visual;
 - prioridade: `P2`;
-- estado: `Planejado`;
-- usar fundo branco em toda a tela e o ícone aprovado da CrânIA;
+- estado: `Em desenvolvimento`;
+- usar fundo branco em toda a tela e somente o livro aberto isolado da parte
+  inferior do logo aprovado da CrânIA;
+- não exibir caveira, cérebro, cabos, texto, sombra ou outros elementos do
+  logo completo;
+- reutilizar o mesmo ativo, com transparência e margens seguras, no splash
+  nativo e no carregamento inicial do React Native;
 - não recriar uma espera artificial: o splash dura somente o tempo real de
   inicialização;
-- validar proporção e recorte em telefone e tablet.
+- validar proporção e recorte em telefone e tablet, em retrato e paisagem.
 
 ### BRAND-002 — Atualizar a tela Sobre
 
