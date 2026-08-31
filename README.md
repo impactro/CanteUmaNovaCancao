@@ -41,6 +41,28 @@ npm ci
 npm run ci:check
 ```
 
+### Dependências Android sob demanda
+
+Para manter a estação enxuta, o SDK, o NDK, o CMake, o emulador e as
+dependências npm não são considerados parte do código-fonte. O projeto guarda
+o lockfile e baixa as versões necessárias quando o ambiente for preparado.
+
+```powershell
+.\scripts\android-dependencies.bat initialize
+.\scripts\android-dependencies.bat initialize -IncludeAvdImage
+.\scripts\android-dependencies.bat finalize
+```
+
+`initialize` instala `platform-tools`, API 36, Build Tools 36.0.0, NDK
+27.1.12297006 e CMake 3.22.1. A imagem do AVD só é baixada com
+`-IncludeAvdImage`. `finalize` remove `node_modules`, `.expo` e a pasta
+`android` gerada pelo Expo; artefatos de build são preservados.
+
+As opções `-RemoveAvd`, `-RemoveSdk` e `-RemoveArtifacts` são destrutivas e
+devem ser usadas somente quando não houver build ou teste em andamento. O SDK
+é resolvido por `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `PATH` ou descoberta local;
+nenhum caminho de uma máquina específica é requisito do projeto.
+
 O arquivo `google-services.json` é necessário para os builds Android atuais,
 mas contém configuração do ambiente e permanece fora do Git. Keystores, senhas
 e credenciais também nunca devem ser versionados.
