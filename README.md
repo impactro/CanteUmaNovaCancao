@@ -36,6 +36,9 @@ Requisitos recomendados:
 - Android Studio/SDK com API 36;
 - `adb` para instalação e diagnóstico em dispositivo ou AVD.
 
+O procedimento e os resultados da preparação local estão em
+[Ambiente Android local](docs/android-local-environment.md).
+
 ```powershell
 npm ci
 npm run ci:check

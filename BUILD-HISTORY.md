@@ -337,3 +337,18 @@ learning_candidate:
 
 Entrega e próximo gate:
 ```
+
+## 2026-10-17 — Preparação da estação AISTEIN-LAB
+
+- Autorização: Fábio solicitou retomar o aplicativo, clonar o repositório e preparar SDK/dispositivos virtuais. Execução FAST/OPS pelo agente atual; sem QA independente.
+- Fonte: `impactro/CanteUmaNovaCancao`, branch `release/3.3.51`, commit `4623d9b`. Checkout inicialmente limpo. Nenhum commit ou push executado.
+- Ambiente: Node 24.21.0; Temurin JDK 17.0.20.1; API 36; Build Tools 36.0.0; Platform Tools 37.0.1; NDK 27.1.12297006; CMake 3.22.1; Emulator 37.2.12; imagem Google APIs API36 x86_64 revisão 7. JDK e command-line tools verificados por SHA-256 oficial.
+- Dados/caches externos ao código por ANDROID_USER_HOME, ANDROID_AVD_HOME e GRADLE_USER_HOME. Inventário físico e backup das variáveis anteriores pertencem ao CServer/AISTEIN-LAB, fora do repositório público.
+- Inicialização: usado `scripts/android-dependencies.bat initialize -IncludeAvdImage` com instalação npm separada. `npm ci` passou, com 857 pacotes. `package.json` e lockfile preservados.
+- Testes: `npm run test:ci` passou; manifesto mesclado explicitamente não testado por depender de compilação. `npm run ci:check` reprovou no Expo Doctor: patch versions esperadas de expo/file-system/updates mais recentes que as fixadas. O aviso conhecido de config-plugins também apareceu. Nenhum bypass foi introduzido.
+- Segurança de dependências: npm reportou 62 vulnerabilidades (22 moderadas, 39 altas e uma crítica). Revisão e atualização de dependências ficam pendentes de ciclo específico.
+- Virtualização: Windows Hypervisor Platform habilitado pelo CMonitor com NoRestart; Windows indicou RestartNeeded. `emulator -accel-check` aprovou WHPX. AVD telefone `CUNC_Phone_API36` concluiu boot em 138008 ms, com API36 e `sys.boot_completed=1`, e foi encerrado após a verificação. Ambos os AVDs usam dois núcleos e 2 GB cada; testar sequencialmente.
+- Build: gate Firebase reprovou corretamente por ausência do arquivo privado real. Prebuild e compilação não iniciados; nenhum APK/AAB, assinatura ou publicação.
+- Documentação de uso: `docs/android-local-environment.md`. Logs externos mantidos no diretório Android de dados do host. Não há tempo de compilação nesta rodada, pois não ocorreu build.
+- Incidente operacional: primeira tentativa de iniciar o emulador ocorreu antes do término da instalação do SDK e falhou por SDK incompleto. Após o bootstrap terminar e ANDROID_SDK_ROOT ser fornecido explicitamente, o telefone iniciou. Prevenção: aguardar instalação e validar platform-tools antes de iniciar AVD.
+- Validação final dos AVDs: tablet `CUNC_Tablet_API36` concluiu boot em 189022 ms, com `sys.boot_completed=1`; telefone e tablet foram testados sequencialmente e encerrados. A preparação de ferramentas e AVDs foi concluída; o aplicativo não foi executado por depender do Firebase privado e da resolução do diagnóstico Expo. Documentação revisada com `git diff --check`, sem erros de whitespace.
